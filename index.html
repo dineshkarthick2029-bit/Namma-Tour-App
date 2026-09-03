@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>நம்ம டூர் — Namma Tour</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#0E2A20">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.js"></script>
+<style>
+  :root{
+    --forest:#0E2A20;
+    --forest-2:#173B2C;
+    --brass:#C9A227;
+    --brass-soft:#E7CE7A;
+    --ivory:#F3EFE3;
+    --warn:#B5533C;
+    --ok:#4F7A5B;
+    --card:#123527;
+    --line:rgba(243,239,227,0.14);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--forest);color:var(--ivory);
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;min-height:100vh;}
+  body{
+    background-image:
+      radial-gradient(circle at 15% 8%, rgba(201,162,39,0.10), transparent 40%),
+      radial-gradient(circle at 90% 85%, rgba(201,162,39,0.06), transparent 45%);
+  }
+  .wrap{max-width:480px;margin:0 auto;padding:0 0 90px;min-height:100vh;position:relative;}
+
+  header{
+    display:flex;align-items:center;gap:12px;padding:18px 16px 14px;
+    border-bottom:1px solid var(--line);position:sticky;top:0;
+    background:linear-gradient(180deg,var(--forest) 80%,rgba(14,42,32,0.85));
+    backdrop-filter:blur(6px);z-index:20;
+  }
+  .logo{width:42px;height:42px;flex:none;}
+  .brand{line-height:1.15;}
+  .brand .ta{font-size:19px;font-weight:700;color:var(--brass-soft);letter-spacing:.2px;}
+  .brand .en{font-size:11px;color:rgba(243,239,227,0.55);text-transform:uppercase;letter-spacing:1.5px;}
+  .status{margin-left:auto;font-size:11px;padding:5px 10px;border-radius:20px;font-weight:600;white-space:nowrap;}
+  .status.online{background:rgba(79,122,91,0.25);color:#9FD3AC;border:1px solid rgba(79,122,91,0.5);}
+  .status.offline{background:rgba(181,83,60,0.22);color:#E8A896;border:1px solid rgba(181,83,60,0.5);}
+
+  .hero{padding:20px 16px 6px;}
+  .hero h1{font-size:21px;margin:0 0 6px;font-weight:700;color:var(--ivory);}
+  .hero p{margin:0;font-size:13.5px;line-height:1.55;color:rgba(243,239,227,0.65);}
+
+  .tabs{display:flex;gap:8px;padding:16px 16px 8px;}
+  .tab{flex:1;text-align:center;padding:10px 6px;border-radius:12px;font-size:12.5px;font-weight:600;
+    background:var(--card);border:1px solid var(--line);color:rgba(243,239,227,0.6);cursor:pointer;}
+  .tab.active{background:var(--brass);color:var(--forest);border-color:var(--brass);}
+
+  section.panel{display:none;padding:6px 16px 0;}
+  section.panel.active{display:block;}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px;}
+  .field{margin-bottom:12px;}
+  .field label{display:block;font-size:12px;color:rgba(243,239,227,0.55);margin-bottom:6px;}
+  .field input,.field select,.field textarea{
+    width:100%;background:rgba(243,239,227,0.06);border:1px solid var(--line);border-radius:10px;
+    padding:11px 12px;color:var(--ivory);font-size:14.5px;font-family:inherit;
+  }
+  .field textarea{resize:vertical;min-height:64px;}
+  .field select{appearance:none;}
+  .btn{width:100%;padding:13px;border-radius:12px;border:none;font-size:14.5px;font-weight:700;
+    background:var(--brass);color:var(--forest);cursor:pointer;}
+  .btn.secondary{background:transparent;border:1px solid var(--brass);color:var(--brass-soft);}
+  .btn.ghost{background:rgba(243,239,227,0.06);color:var(--ivory);border:1px solid var(--line);}
+  .btn-row{display:flex;gap:8px;}
+  .btn-row .btn{flex:1;}
+
+  .tip{border-left:3px solid var(--ok);padding-left:12px;margin-bottom:14px;}
+  .tip.warn{border-left-color:var(--warn);}
+  .tip-top{display:flex;align-items:center;gap:8px;margin-bottom:4px;}
+  .badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px;}
+  .badge.ok{background:rgba(79,122,91,0.25);color:#9FD3AC;}
+  .badge.warn{background:rgba(181,83,60,0.25);color:#E8A896;}
+  .badge.info{background:rgba(201,162,39,0.2);color:var(--brass-soft);}
+  .tip-place{font-weight:700;font-size:15px;}
+  .tip-note{font-size:13.5px;color:rgba(243,239,227,0.75);line-height:1.5;margin:4px 0 8px;}
+  .tip-meta{font-size:11px;color:rgba(243,239,227,0.4);margin-bottom:8px;}
+  .tip-actions{display:flex;gap:8px;}
+  .icon-btn{background:rgba(243,239,227,0.06);border:1px solid var(--line);color:var(--ivory);
+    border-radius:8px;padding:6px 10px;font-size:12px;display:flex;align-items:center;gap:5px;cursor:pointer;}
+
+  .empty{text-align:center;padding:40px 20px;color:rgba(243,239,227,0.4);font-size:13.5px;}
+
+  #qrModal,#scanModal,.overlay{
+    position:fixed;inset:0;background:rgba(6,17,12,0.88);display:none;align-items:center;justify-content:center;
+    z-index:100;padding:20px;
+  }
+  .modal-box{background:var(--forest-2);border:1px solid var(--line);border-radius:18px;padding:22px;
+    max-width:340px;width:100%;text-align:center;}
+  .modal-box h3{margin:0 0 4px;color:var(--brass-soft);font-size:16px;}
+  .modal-box p{font-size:12.5px;color:rgba(243,239,227,0.6);margin:0 0 16px;}
+  #qrCanvas{background:#fff;padding:10px;border-radius:10px;display:inline-block;margin-bottom:16px;}
+  video#scanVideo{width:100%;border-radius:12px;margin-bottom:14px;background:#000;}
+
+  .assistant-fab{
+    position:fixed;bottom:22px;right:50%;transform:translateX(240px);
+    width:58px;height:58px;border-radius:50%;background:var(--brass);
+    display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(0,0,0,0.4);
+    border:none;cursor:pointer;z-index:60;
+  }
+  @media (max-width:480px){ .assistant-fab{ right:20px; transform:none; } }
+  .assistant-fab.listening{background:var(--warn);animation:pulse 1.2s infinite;}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(181,83,60,0.5);}70%{box-shadow:0 0 0 16px rgba(181,83,60,0);}100%{box-shadow:0 0 0 0 rgba(181,83,60,0);}}
+
+  .assist-sheet{position:fixed;left:0;right:0;bottom:0;background:var(--forest-2);border-top:1px solid var(--line);
+    border-radius:20px 20px 0 0;padding:18px 18px 24px;z-index:80;display:none;max-width:480px;margin:0 auto;}
+  .assist-sheet h3{margin:0 0 10px;font-size:14px;color:var(--brass-soft);}
+  .assist-log{max-height:160px;overflow-y:auto;font-size:13px;line-height:1.6;color:rgba(243,239,227,0.8);
+    margin-bottom:10px;padding-right:4px;}
+  .assist-log .u{color:var(--brass-soft);font-weight:600;}
+  .assist-log .a{color:rgba(243,239,227,0.7);margin-bottom:8px;}
+  .assist-input-row{display:flex;gap:8px;}
+  .assist-input-row input{flex:1;}
+  .close-x{position:absolute;top:14px;right:16px;background:none;border:none;color:rgba(243,239,227,0.5);font-size:18px;cursor:pointer;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <svg class="logo" viewBox="0 0 100 100" fill="none">
+      <circle cx="50" cy="50" r="48" fill="#173B2C" stroke="#C9A227" stroke-width="2.5"/>
+      <path d="M35 62 C35 50, 42 46, 42 38 C42 32, 37 30, 37 25" stroke="#E7CE7A" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <circle cx="37" cy="20" r="4.5" fill="#C9A227"/>
+      <path d="M65 62 C65 50, 58 46, 58 38 C58 32, 63 30, 63 25" stroke="#E7CE7A" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <circle cx="63" cy="20" r="4.5" fill="#C9A227"/>
+      <path d="M28 70 Q50 78 72 70" stroke="#C9A227" stroke-width="3" fill="none" stroke-linecap="round"/>
+    </svg>
+    <div class="brand">
+      <div class="ta">நம்ம டூர்</div>
+      <div class="en">Namma Tour</div>
+    </div>
+    <div id="status" class="status online">● Online</div>
+  </header>
+
+  <div class="hero">
+    <h1>Traveler tips, no signal needed</h1>
+    <p>Every note here was left by a traveler and passed phone-to-phone by QR code. No internet, no server — just travelers helping travelers.</p>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="feed">Tips</div>
+    <div class="tab" data-tab="add">Add</div>
+    <div class="tab" data-tab="sync">Sync</div>
+  </div>
+
+  <!-- FEED -->
+  <section class="panel active" id="panel-feed">
+    <div id="feedList"></div>
+  </section>
+
+  <!-- ADD -->
+  <section class="panel" id="panel-add">
+    <div class="card">
+      <div class="field">
+        <label>Place name</label>
+        <input id="inPlace" placeholder="e.g. Kolukkumalai viewpoint">
+      </div>
+      <div class="field">
+        <label>Type</label>
+        <select id="inType">
+          <option value="ok">Recommend</option>
+          <option value="warn">Warning</option>
+          <option value="info">Info</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Note</label>
+        <textarea id="inNote" placeholder="What should the next traveler know?"></textarea>
+      </div>
+      <button class="btn" onclick="addTip()">Save tip to this phone</button>
+    </div>
+  </section>
+
+  <!-- SYNC -->
+  <section class="panel" id="panel-sync">
+    <div class="card">
+      <h3 style="margin:0 0 6px;font-size:15px;color:var(--brass-soft);">Share your tips</h3>
+      <p style="font-size:12.5px;color:rgba(243,239,227,0.6);margin:0 0 14px;">Show this QR to another traveler's phone. They scan it — your tips copy straight to their phone.</p>
+      <div class="btn-row">
+        <button class="btn" onclick="openShareAll()">Share all my tips</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3 style="margin:0 0 6px;font-size:15px;color:var(--brass-soft);">Receive tips</h3>
+      <p style="font-size:12.5px;color:rgba(243,239,227,0.6);margin:0 0 14px;">Scan another traveler's QR to pull their tips into your feed.</p>
+      <button class="btn secondary" onclick="openScan()">Scan a QR code</button>
+    </div>
+    <div class="card">
+      <h3 style="margin:0 0 6px;font-size:15px;color:var(--brass-soft);">Once you get signal</h3>
+      <p style="font-size:12.5px;color:rgba(243,239,227,0.6);margin:0;">Tips marked "verified" upload automatically and become visible to every traveler using the app, everywhere. (Needs a cloud database — see the note at the end of this chat.)</p>
+    </div>
+  </section>
+
+</div>
+
+<!-- QR share modal -->
+<div id="qrModal" class="overlay">
+  <div class="modal-box">
+    <button class="close-x" onclick="closeModal('qrModal')">✕</button>
+    <h3 id="qrTitle">Scan to receive</h3>
+    <p>Hold this screen up to the other traveler's camera.</p>
+    <div id="qrCanvas"></div>
+  </div>
+</div>
+
+<!-- QR scan modal -->
+<div id="scanModal" class="overlay">
+  <div class="modal-box">
+    <button class="close-x" onclick="stopScan()">✕</button>
+    <h3>Point at a QR code</h3>
+    <p>Allow camera access to receive tips.</p>
+    <video id="scanVideo" playsinline muted></video>
+    <div id="scanStatus" style="font-size:12px;color:rgba(243,239,227,0.5);">Looking for a code…</div>
+  </div>
+</div>
+
+<!-- Voice assistant -->
+<button class="assistant-fab" id="fabBtn" onclick="toggleAssistant()">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z" stroke="#0E2A20" stroke-width="2"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3" stroke="#0E2A20" stroke-width="2" stroke-linecap="round"/></svg>
+</button>
+
+<div class="assist-sheet" id="assistSheet">
+  <h3>Tour Assistant — works with zero signal</h3>
+  <div class="assist-log" id="assistLog">
+    <div class="a">Try: "read tips", "find waterfall", "warnings only", or tap the mic and speak.</div>
+  </div>
+  <div class="assist-input-row">
+    <input id="assistInput" placeholder="Type a command…" onkeydown="if(event.key==='Enter')runAssistant()">
+    <button class="icon-btn" onclick="startVoiceInput()">🎙️</button>
+    <button class="btn" style="width:auto;padding:11px 16px;" onclick="runAssistant()">Go</button>
+  </div>
+</div>
+
+<script>
+/* ---------- Storage ---------- */
+const STORE_KEY = 'nammatour_tips_v1';
+function getTips(){ try{ return JSON.parse(localStorage.getItem(STORE_KEY)) || []; }catch(e){ return []; } }
+function saveTips(t){ localStorage.setItem(STORE_KEY, JSON.stringify(t)); }
+
+function seedIfEmpty(){
+  if(getTips().length) return;
+  saveTips([
+    {id:cryptoId(), place:'Kolukkumalai viewpoint', type:'ok', note:'Best sunrise in the Western Ghats. Go before 5:30am, jeep track is rough.', ts:Date.now()},
+    {id:cryptoId(), place:'Munnar - old bridge road', type:'warn', note:'Road blocked after heavy rain, landslide risk. Take the highway detour.', ts:Date.now()-86400000},
+    {id:cryptoId(), place:'Green Valley Homestay', type:'ok', note:'Family-run, great food, ₹900/night. Ask for the room facing the tea estate.', ts:Date.now()-172800000}
+  ]);
+}
+function cryptoId(){ return 't_' + Math.random().toString(36).slice(2,10) + Date.now().toString(36); }
+
+/* ---------- Tabs ---------- */
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.onclick = ()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-'+tab.dataset.tab).classList.add('active');
+  };
+});
+
+/* ---------- Feed rendering ---------- */
+function renderFeed(filter){
+  const list = document.getElementById('feedList');
+  let tips = getTips().sort((a,b)=>b.ts-a.ts);
+  if(filter) tips = filter(tips);
+  if(!tips.length){ list.innerHTML = '<div class="empty">No tips yet. Add one, or scan a QR from another traveler.</div>'; return; }
+  list.innerHTML = tips.map(t=>`
+    <div class="tip ${t.type==='warn'?'warn':''}">
+      <div class="tip-top">
+        <span class="badge ${t.type}">${t.type==='ok'?'Recommend':t.type==='warn'?'Warning':'Info'}</span>
+      </div>
+      <div class="tip-place">${escapeHtml(t.place)}</div>
+      <div class="tip-note">${escapeHtml(t.note)}</div>
+      <div class="tip-meta">${new Date(t.ts).toLocaleDateString()} · left by a traveler</div>
+      <div class="tip-actions">
+        <button class="icon-btn" onclick="speakTip('${t.id}')">🔊 Read aloud</button>
+        <button class="icon-btn" onclick="openShareOne('${t.id}')">📤 Share this</button>
+      </div>
+    </div>
+  `).join('');
+}
+function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ---------- Add tip ---------- */
+function addTip(){
+  const place = document.getElementById('inPlace').value.trim();
+  const note = document.getElementById('inNote').value.trim();
+  const type = document.getElementById('inType').value;
+  if(!place || !note){ alert('Add a place name and a note first.'); return; }
+  const tips = getTips();
+  tips.push({id:cryptoId(), place, type, note, ts:Date.now()});
+  saveTips(tips);
+  document.getElementById('inPlace').value=''; document.getElementById('inNote').value='';
+  document.querySelector('.tab[data-tab="feed"]').click();
+  renderFeed();
+}
+
+/* ---------- Offline-first Text-to-Speech (works with zero signal once page is loaded) ---------- */
+function speak(text){
+  if(!('speechSynthesis' in window)){ alert('Voice reading is not supported on this browser.'); return; }
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = 0.98;
+  window.speechSynthesis.speak(u);
+}
+function speakTip(id){
+  const t = getTips().find(x=>x.id===id);
+  if(t) speak(`${t.place}. ${t.type==='warn'?'Warning. ':''}${t.note}`);
+}
+
+/* ---------- QR share ---------- */
+let currentShareData = null;
+function openShareAll(){
+  currentShareData = { v:1, tips: getTips() };
+  document.getElementById('qrTitle').textContent = 'All my tips';
+  renderQR(JSON.stringify(currentShareData));
+}
+function openShareOne(id){
+  const t = getTips().find(x=>x.id===id);
+  currentShareData = { v:1, tips:[t] };
+  document.getElementById('qrTitle').textContent = t.place;
+  renderQR(JSON.stringify(currentShareData));
+}
+function renderQR(data){
+  const box = document.getElementById('qrCanvas');
+  box.innerHTML = '';
+  new QRCode(box, { text:data, width:220, height:220, colorDark:'#0E2A20', colorLight:'#ffffff' });
+  document.getElementById('qrModal').style.display = 'flex';
+}
+function closeModal(id){ document.getElementById(id).style.display='none'; }
+
+/* ---------- QR scan (camera) ---------- */
+let scanStream, scanRAF;
+function openScan(){
+  document.getElementById('scanModal').style.display = 'flex';
+  navigator.mediaDevices.getUserMedia({ video:{facingMode:'environment'} }).then(stream=>{
+    scanStream = stream;
+    const video = document.getElementById('scanVideo');
+    video.srcObject = stream; video.play();
+    tickScan();
+  }).catch(()=>{ document.getElementById('scanStatus').textContent = 'Camera access denied.'; });
+}
+function tickScan(){
+  const video = document.getElementById('scanVideo');
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  function loop(){
+    if(video.readyState === video.HAVE_ENOUGH_DATA){
+      canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+      ctx.drawImage(video,0,0,canvas.width,canvas.height);
+      const img = ctx.getImageData(0,0,canvas.width,canvas.height);
+      const code = jsQR(img.data, img.width, img.height);
+      if(code){ handleScanResult(code.data); return; }
+    }
+    scanRAF = requestAnimationFrame(loop);
+  }
+  loop();
+}
+function handleScanResult(text){
+  try{
+    const payload = JSON.parse(text);
+    if(payload && payload.tips){
+      const existing = getTips();
+      const existingIds = new Set(existing.map(t=>t.id));
+      let added = 0;
+      payload.tips.forEach(t=>{ if(!existingIds.has(t.id)){ existing.push(t); added++; } });
+      saveTips(existing);
+      document.getElementById('scanStatus').textContent = `Added ${added} new tip(s)!`;
+      renderFeed();
+      setTimeout(stopScan, 900);
+    } else {
+      document.getElementById('scanStatus').textContent = 'Not a Namma Tour code.';
+    }
+  }catch(e){
+    document.getElementById('scanStatus').textContent = 'Could not read that code.';
+  }
+}
+function stopScan(){
+  if(scanRAF) cancelAnimationFrame(scanRAF);
+  if(scanStream) scanStream.getTracks().forEach(tr=>tr.stop());
+  document.getElementById('scanModal').style.display = 'none';
+}
+
+/* ---------- Online/offline status ---------- */
+function updateStatus(){
+  const el = document.getElementById('status');
+  if(navigator.onLine){ el.textContent = '● Online'; el.className = 'status online'; }
+  else{ el.textContent = '● No signal'; el.className = 'status offline'; }
+}
+window.addEventListener('online', updateStatus);
+window.addEventListener('offline', updateStatus);
+
+/* ---------- Voice assistant: offline command parser + optional speech input ---------- */
+function toggleAssistant(){
+  const sheet = document.getElementById('assistSheet');
+  sheet.style.display = sheet.style.display === 'block' ? 'none' : 'block';
+}
+function logAssist(user, reply){
+  const log = document.getElementById('assistLog');
+  log.innerHTML += `<div class="u">You: ${escapeHtml(user)}</div><div class="a">${escapeHtml(reply)}</div>`;
+  log.scrollTop = log.scrollHeight;
+}
+function runAssistant(){
+  const input = document.getElementById('assistInput');
+  const text = input.value.trim();
+  if(!text) return;
+  input.value = '';
+  const reply = handleCommand(text);
+  logAssist(text, reply);
+  speak(reply);
+}
+function handleCommand(raw){
+  const cmd = raw.toLowerCase();
+  const tips = getTips();
+  if(cmd.includes('read')){
+    if(!tips.length) return 'No tips saved yet.';
+    tips.slice(0,3).forEach(t=>setTimeout(()=>speak(`${t.place}. ${t.note}`), 400));
+    return `Reading your ${Math.min(3,tips.length)} latest tips.`;
+  }
+  if(cmd.includes('warning')){
+    const w = tips.filter(t=>t.type==='warn');
+    return w.length ? `${w.length} warning${w.length>1?'s':''}: ` + w.map(t=>t.place).join(', ') : 'No warnings right now.';
+  }
+  if(cmd.startsWith('find') || cmd.startsWith('search')){
+    const q = cmd.replace('find','').replace('search','').trim();
+    const hits = tips.filter(t=> t.place.toLowerCase().includes(q) || t.note.toLowerCase().includes(q));
+    return hits.length ? `Found: ${hits.map(t=>t.place).join(', ')}` : `Nothing found for "${q}".`;
+  }
+  if(cmd.includes('how many')){
+    return `You have ${tips.length} tip${tips.length===1?'':'s'} saved on this phone.`;
+  }
+  return `I can read your tips, tell you warnings, or search — try "find waterfall".`;
+}
+function startVoiceInput(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const fab = document.getElementById('fabBtn');
+  if(!SR){
+    logAssist('(voice)', 'Voice input needs a browser with speech recognition — type your command instead.');
+    return;
+  }
+  const rec = new SR();
+  rec.lang = 'en-IN';
+  rec.onstart = ()=> fab.classList.add('listening');
+  rec.onend = ()=> fab.classList.remove('listening');
+  rec.onerror = ()=>{ fab.classList.remove('listening'); logAssist('(voice)', 'Could not hear you — needs a data connection on most phones. Try typing instead.'); };
+  rec.onresult = (e)=>{
+    const said = e.results[0][0].transcript;
+    document.getElementById('assistInput').value = said;
+    const reply = handleCommand(said);
+    logAssist(said, reply);
+    speak(reply);
+  };
+  rec.start();
+}
+
+/* ---------- Init ---------- */
+seedIfEmpty();
+renderFeed();
+updateStatus();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
