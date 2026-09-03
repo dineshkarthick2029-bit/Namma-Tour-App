@@ -1,0 +1,1328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Namma Tour — tips that travel where signal doesn't</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#1F2E28">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Namma Tour">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=Noto+Sans+Tamil:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<style>
+  @font-face {
+    font-family: 'Fraunces-fallback';
+    src: local('Georgia');
+  }
+  :root{
+    --pine: #1F2E28;
+    --pine-2: #263B33;
+    --paper: #F4EFE1;
+    --paper-dim: #E7DFC9;
+    --rust: #C77B3F;
+    --moss: #5C7A63;
+    --sage: #8A9B8E;
+    --ink: #22201B;
+    --line: rgba(244,239,225,0.12);
+  }
+  *{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html,body{ margin:0; padding:0; background: var(--pine); }
+  body{
+    font-family: 'Inter', 'Noto Sans Tamil', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: var(--paper);
+    min-height: 100vh;
+    display:flex; justify-content:center;
+  }
+  .app{
+    width:100%; max-width:480px; min-height:100vh;
+    display:flex; flex-direction:column;
+    position:relative;
+  }
+  h1,h2,h3,.serif{
+    font-family: 'Fraunces', 'Noto Sans Tamil', 'Fraunces-fallback', Georgia, serif;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  /* ---- topo header ---- */
+  .header{
+    position:relative;
+    padding: 22px 20px 26px;
+    background: linear-gradient(180deg, var(--pine) 0%, var(--pine-2) 100%);
+    overflow:hidden;
+    border-bottom: 1px solid var(--line);
+  }
+  .topo{
+    position:absolute; inset:0; opacity:0.35; pointer-events:none;
+  }
+  .header-top{
+    display:flex; justify-content:space-between; align-items:center;
+    position:relative; z-index:1; gap:8px;
+  }
+  .brand{ display:flex; align-items:center; gap:9px; }
+  .brand-mark{
+    width:26px; height:26px; flex-shrink:0;
+  }
+  .brand-name{ font-size: 21px; color: var(--paper); }
+  .header-right{ display:flex; align-items:center; gap:8px; }
+  .lang-toggle{
+    display:flex; align-items:center; border:1px solid var(--line);
+    border-radius:20px; overflow:hidden; flex-shrink:0;
+  }
+  .lang-btn{
+    border:none; background:transparent; color: var(--sage);
+    font-size:11.5px; padding:5px 10px; cursor:pointer; font-weight:600;
+    font-family:'Inter',sans-serif;
+  }
+  .lang-btn.active{ background: var(--rust); color:#fff; }
+  .signal{
+    display:flex; align-items:center; gap:6px;
+    font-size:11.5px; padding:5px 10px 5px 8px;
+    border-radius:20px; border:1px solid var(--line);
+    letter-spacing:0.02em; white-space:nowrap;
+  }
+  .signal.offline{ color:#E8B98A; border-color: rgba(199,123,63,0.4); }
+  .signal.online{ color:#9FC2A8; border-color: rgba(92,122,99,0.5); }
+  .signal-dot{ width:6px; height:6px; border-radius:50%; background:currentColor; flex-shrink:0; }
+  .signal-dot.pulse{ animation: pulse 1.6s infinite; }
+  @keyframes pulse{ 0%,100%{opacity:1} 50%{opacity:0.35} }
+
+  .tagline{
+    position:relative; z-index:1;
+    margin-top: 18px; font-size: 26px; line-height:1.25; color: var(--paper);
+    max-width: 300px;
+  }
+  .tagline em{ color: var(--rust); font-style: normal; }
+  .subtag{
+    position:relative; z-index:1;
+    margin-top:8px; font-size:13.5px; color: var(--sage); line-height:1.5; max-width: 280px;
+  }
+
+  /* ---- stat strip ---- */
+  .stats{
+    display:flex; position:relative; z-index:1;
+    margin-top:20px; gap:0; border-top:1px solid var(--line);
+  }
+  .stat{ flex:1; padding-top:12px; border-right:1px solid var(--line); }
+  .stat:last-child{ border-right:none; }
+  .stat-num{ font-family:'Fraunces','Fraunces-fallback',serif; font-size:20px; color:var(--paper); }
+  .stat-label{ font-size:10.5px; color:var(--sage); margin-top:2px; }
+
+  /* ---- main scroll area ---- */
+  .main{
+    flex:1; background: var(--paper); color: var(--ink);
+    border-radius: 18px 18px 0 0; margin-top:-14px; position:relative; z-index:2;
+    padding: 22px 18px 100px;
+  }
+  .section-label{
+    font-size:11px; letter-spacing:0.04em; color: var(--moss);
+    display:flex; align-items:center; gap:8px; margin-bottom:14px;
+  }
+  .section-label::after{
+    content:''; flex:1; height:1px; background: var(--paper-dim);
+  }
+
+  /* ---- voice ask ---- */
+  .voice-ask{
+    width:100%; display:flex; align-items:center; justify-content:center; gap:8px;
+    border:1.5px dashed var(--moss); background: #EEF2EA; color: var(--moss);
+    border-radius: 12px; padding: 12px; font-size:13.5px; font-weight:600;
+    margin-bottom:16px; cursor:pointer; font-family:'Inter',sans-serif;
+  }
+  .voice-ask.listening{ border-style:solid; background:#FBEAE0; color:var(--rust); border-color:var(--rust); }
+  .voice-ask svg{ flex-shrink:0; }
+
+  /* ---- trail card ---- */
+  .card{
+    background: #fff; border:1px solid var(--paper-dim);
+    border-radius: 10px; padding: 14px 15px;
+    margin-bottom: 12px; position:relative;
+    animation: rise 0.35s ease both;
+  }
+  @keyframes rise{ from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+  .card.new{ border-color: var(--rust); box-shadow: 0 0 0 1px rgba(199,123,63,0.25); }
+  .card-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; }
+  .card-place{ font-family:'Fraunces','Fraunces-fallback',serif; font-size:16.5px; color:var(--ink); }
+  .card-tag{
+    font-size: 10px; padding: 3px 8px; border-radius: 20px; white-space:nowrap;
+    letter-spacing:0.02em; flex-shrink:0; margin-top:2px;
+  }
+  .tag-good{ background:#EAF1EA; color: var(--moss); }
+  .tag-warn{ background:#FBEAE0; color: var(--rust); }
+  .card-body{ font-size:13.5px; line-height:1.5; color:#4A473E; margin-top:6px; }
+  .card-meta{
+    display:flex; align-items:center; gap:6px; margin-top:10px;
+    font-size:11px; color: var(--sage);
+  }
+  .verified{
+    display:flex; align-items:center; gap:4px; color: var(--moss);
+  }
+  .dot-sep{ opacity:0.5; }
+
+  /* ---- quick actions (sync + voice) ---- */
+  .quick-actions{ display:flex; gap:10px; margin-bottom:14px; }
+  .quick-btn{
+    flex:1; display:flex; align-items:center; justify-content:center; gap:7px;
+    border:1.5px solid var(--pine); background: var(--pine); color: var(--paper);
+    border-radius:12px; padding:12px; font-size:13px; font-weight:600; cursor:pointer;
+    font-family:'Inter',sans-serif;
+  }
+  #voiceAskBtn.quick-btn{ background:#fff; color: var(--pine); }
+  #voiceAskBtn.quick-btn.listening{ background:#FBEAE0; color:var(--rust); border-color:var(--rust); }
+
+  /* ---- tab bar + FAB ---- */
+  .main{ padding-bottom: 112px; }
+  .tab-bar{
+    position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+    width:100%; max-width:480px;
+    display:flex; align-items:center; justify-content:space-around;
+    background: #fff; border-top:1px solid var(--paper-dim);
+    padding: 10px 20px calc(10px + env(safe-area-inset-bottom));
+    z-index: 10;
+  }
+  .tab-btn{
+    background:none; border:none; display:flex; flex-direction:column; align-items:center; gap:3px;
+    color: var(--sage); font-size:10.5px; font-family:'Inter',sans-serif; font-weight:600; cursor:pointer;
+    flex:1; padding:4px;
+  }
+  .tab-btn.active{ color: var(--rust); }
+  .tab-fab{
+    width:54px; height:54px; border-radius:50%; background: var(--rust); border:none;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+    margin-top:-30px; box-shadow: 0 4px 14px rgba(199,123,63,0.45);
+    flex-shrink:0;
+  }
+  .tab-fab:active{ transform: scale(0.94); }
+
+  /* ---- map view ---- */
+  #mapView{ display:none; }
+  #mapView.show{ display:block; }
+  #trailView.hide{ display:none; }
+  .map-card{
+    background:#fff; border:1px solid var(--paper-dim); border-radius:16px;
+    padding:16px; margin-bottom:14px;
+  }
+  #trailMapSvg{ width:100%; height:auto; }
+  .map-pin{ cursor:pointer; }
+  .map-pin circle.ring{ fill:none; stroke-width:2; opacity:0.35; }
+  .map-pin.good circle.dot{ fill: var(--moss); }
+  .map-pin.good circle.ring{ stroke: var(--moss); }
+  .map-pin.warn circle.dot{ fill: var(--rust); }
+  .map-pin.warn circle.ring{ stroke: var(--rust); }
+  .map-pin text{ font-family:'Inter',sans-serif; font-size:9px; fill: var(--ink); }
+  .map-legend{ display:flex; gap:18px; justify-content:center; font-size:12px; color: var(--moss); }
+  .legend-dot{ display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:5px; vertical-align:middle; }
+  .legend-dot.good{ background: var(--moss); }
+  .legend-dot.warn{ background: var(--rust); }
+
+  /* ---- trust score ---- */
+  .trust-badge{
+    display:inline-flex; align-items:center; gap:3px; background:#EAF1EA; color: var(--moss);
+    font-size:10px; padding:2px 8px; border-radius:20px; font-weight:600; margin-left:6px;
+  }
+
+  /* ---- sync overlay ---- */
+  .overlay{
+    position:fixed; inset:0; background: rgba(31,46,40,0.97);
+    z-index: 50; display:none; align-items:center; justify-content:center;
+    flex-direction:column; color: var(--paper); text-align:center; padding: 30px;
+  }
+  .overlay.show{ display:flex; }
+  .sync-visual{
+    width: 220px; height: 90px; position:relative; margin-bottom: 26px;
+  }
+  .phone-dot{
+    position:absolute; top:50%; width:14px; height:14px; border-radius:50%;
+    background: var(--rust); transform: translateY(-50%);
+  }
+  .phone-dot.left{ left:0; }
+  .phone-dot.right{ right:0; }
+  .beam{
+    position:absolute; top:50%; left:14px; right:14px; height:2px;
+    background: repeating-linear-gradient(90deg, var(--sage) 0 6px, transparent 6px 12px);
+    transform: translateY(-50%); opacity:0.5;
+  }
+  .packet{
+    position:absolute; top:50%; left:14px; width:8px; height:8px; border-radius:50%;
+    background: var(--paper); transform: translateY(-50%);
+    animation: travel 1.1s ease-in-out infinite;
+  }
+  @keyframes travel{
+    0%{ left:14px; opacity:0; }
+    10%{ opacity:1; }
+    90%{ opacity:1; }
+    100%{ left: calc(100% - 22px); opacity:0; }
+  }
+  .sync-status{ font-family:'Fraunces','Fraunces-fallback',serif; font-size:19px; margin-bottom:6px; }
+  .sync-sub{ font-size:13px; color: var(--sage); max-width:260px; line-height:1.5; }
+
+  /* ---- add modal ---- */
+  .modal{
+    position:fixed; inset:0; z-index:60; display:none;
+    align-items:flex-end; justify-content:center;
+    background: rgba(20,26,22,0.55);
+  }
+  .modal.show{ display:flex; }
+  .sheet{
+    width:100%; max-width:480px; background: var(--paper);
+    border-radius: 18px 18px 0 0; padding: 20px 18px calc(20px + env(safe-area-inset-bottom));
+    animation: sheetUp 0.25s ease;
+  }
+  @keyframes sheetUp{ from{transform:translateY(100%)} to{transform:translateY(0)} }
+  .sheet h3{ font-size:19px; color:var(--ink); margin:0 0 3px; }
+  .sheet-sub{ font-size:12.5px; color:var(--moss); margin-bottom:16px; }
+  .field{ margin-bottom:12px; }
+  .field-row{ display:flex; justify-content:space-between; align-items:center; margin-bottom:5px; }
+  .field label{ display:block; font-size:11px; color:var(--moss); letter-spacing:0.02em; }
+  .field input, .field textarea{
+    width:100%; border:1px solid var(--paper-dim); background:#fff;
+    border-radius:9px; padding:11px 12px; font-size:14px; font-family:'Inter',sans-serif;
+    color: var(--ink); resize:none;
+  }
+  .field textarea{ min-height:64px; }
+  .mic-btn{
+    display:flex; align-items:center; gap:5px; border:none; background:none;
+    color: var(--rust); font-size:11px; font-weight:600; cursor:pointer; padding:2px 0;
+    font-family:'Inter',sans-serif;
+  }
+  .mic-btn.listening{ color:#A32D2D; }
+  .type-row{ display:flex; gap:8px; margin-bottom:16px; }
+  .type-btn{
+    flex:1; padding:10px; border-radius:9px; border:1px solid var(--paper-dim);
+    background:#fff; font-size:12.5px; text-align:center; cursor:pointer; color:#6b6858;
+  }
+  .type-btn.active.good{ background:#EAF1EA; border-color: var(--moss); color: var(--moss); }
+  .type-btn.active.warn{ background:#FBEAE0; border-color: var(--rust); color: var(--rust); }
+  .sheet-actions{ display:flex; gap:10px; }
+  .btn{
+    border:none; border-radius: 12px; padding: 14px 12px;
+    font-family:'Inter',sans-serif; font-size:14px; font-weight:600;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    cursor:pointer; transition: transform 0.12s ease;
+  }
+  .btn:active{ transform: scale(0.97); }
+  .btn-add{ background: var(--rust); color: #fff; flex:1; }
+  .btn-cancel{ background:#fff; color:var(--ink); border:1px solid var(--paper-dim); flex:0.7; }
+  .toast{
+    position:fixed; top:16px; left:50%; transform:translateX(-50%) translateY(-40px);
+    background: var(--ink); color:var(--paper); padding:11px 18px; border-radius: 30px;
+    font-size:13px; z-index:80; opacity:0; transition: all 0.3s ease; pointer-events:none;
+    max-width:88%; text-align:center;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* ---- verify row (QR) ---- */
+  .verify-row{ display:flex; gap:10px; margin-bottom:16px; }
+  .verify-btn{
+    flex:1; display:flex; flex-direction:column; align-items:center; gap:6px;
+    border:1px solid var(--paper-dim); background:#fff; border-radius:12px;
+    padding:12px 8px; cursor:pointer; font-family:'Inter',sans-serif;
+  }
+  .verify-btn svg{ color: var(--moss); }
+  .verify-btn span{ font-size:11.5px; color: var(--ink); font-weight:600; text-align:center; }
+  .cloud-status{
+    display:flex; align-items:center; gap:6px; font-size:10.5px; color:var(--sage);
+    margin-bottom:12px; justify-content:center;
+  }
+  .cloud-dot{ width:6px; height:6px; border-radius:50%; background:var(--sage); }
+  .cloud-dot.live{ background:#4A9E5C; }
+
+  /* ---- camera / qr modals ---- */
+  .cam-modal{
+    position:fixed; inset:0; z-index:70; display:none;
+    background: var(--pine); flex-direction:column; align-items:center; justify-content:center;
+    color: var(--paper); text-align:center; padding:24px;
+  }
+  .cam-modal.show{ display:flex; }
+  .cam-video-wrap{
+    width:260px; height:260px; border-radius:20px; overflow:hidden; position:relative;
+    border:2px solid var(--rust); margin-bottom:20px; background:#000;
+  }
+  .cam-video-wrap video{ width:100%; height:100%; object-fit:cover; }
+  .cam-close{
+    position:absolute; top:16px; right:16px; width:36px; height:36px; border-radius:50%;
+    background: rgba(244,239,225,0.15); border:none; color: var(--paper);
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .qr-canvas-wrap{
+    background:#fff; padding:18px; border-radius:14px; margin-bottom:18px;
+  }
+  #qrDisplayBox{ width:200px; height:200px; }
+
+  /* ---- search + filter ---- */
+  .search-row{ display:flex; gap:8px; margin-bottom:12px; }
+  .search-box{
+    flex:1; display:flex; align-items:center; gap:8px;
+    background:#fff; border:1px solid var(--paper-dim); border-radius:11px;
+    padding:10px 12px;
+  }
+  .search-box svg{ color: var(--sage); flex-shrink:0; }
+  .search-box input{
+    border:none; outline:none; font-size:13.5px; width:100%; background:transparent;
+    font-family:'Inter',sans-serif; color:var(--ink);
+  }
+  .filter-chips{ display:flex; gap:6px; margin-bottom:16px; }
+  .chip{
+    padding:7px 13px; border-radius:20px; border:1px solid var(--paper-dim);
+    background:#fff; font-size:12px; color:#6b6858; cursor:pointer; font-family:'Inter',sans-serif;
+    white-space:nowrap;
+  }
+  .chip.active{ background: var(--pine); border-color: var(--pine); color: var(--paper); }
+  .empty-state{ text-align:center; padding:40px 20px; color: var(--sage); font-size:13.5px; display:none; }
+  .empty-state.show{ display:block; }
+
+  /* ---- card share button ---- */
+  .card-meta-row{ display:flex; justify-content:space-between; align-items:center; margin-top:10px; }
+  .share-btn{
+    border:none; background:none; color: var(--sage); cursor:pointer;
+    display:flex; align-items:center; padding:2px; flex-shrink:0;
+  }
+
+  /* ---- skeleton loader ---- */
+  .skeleton-card{
+    background:#fff; border:1px solid var(--paper-dim); border-radius:10px;
+    padding:14px 15px; margin-bottom:12px; overflow:hidden; position:relative;
+  }
+  .skeleton-line{
+    height:12px; border-radius:6px; background: var(--paper-dim);
+    position:relative; overflow:hidden; margin-bottom:8px;
+  }
+  .skeleton-line::after{
+    content:''; position:absolute; inset:0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.7), transparent);
+    animation: shimmer 1.2s infinite;
+  }
+  @keyframes shimmer{ from{transform:translateX(-100%)} to{transform:translateX(100%)} }
+
+  /* ---- install banner ---- */
+  .install-banner{
+    display:none; align-items:center; gap:10px; background: var(--pine); color: var(--paper);
+    border-radius:12px; padding:12px 14px; margin-bottom:14px;
+  }
+  .install-banner.show{ display:flex; }
+  .install-banner-text{ flex:1; font-size:12.5px; line-height:1.4; }
+  .install-banner-text b{ display:block; font-size:13.5px; margin-bottom:1px; }
+  .install-banner button{
+    background: var(--rust); color:#fff; border:none; border-radius:8px;
+    padding:8px 12px; font-size:12px; font-weight:600; cursor:pointer; flex-shrink:0;
+    font-family:'Inter',sans-serif;
+  }
+  .install-dismiss{
+    background:none !important; color: var(--sage) !important; padding:4px !important;
+  }
+
+  /* ---- onboarding ---- */
+  .onboard{
+    position:fixed; inset:0; z-index:100; background: var(--pine); color: var(--paper);
+    display:none; flex-direction:column; padding: 40px 28px;
+  }
+  .onboard.show{ display:flex; }
+  .onboard-slide{ display:none; flex:1; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+  .onboard-slide.active{ display:flex; }
+  .onboard-icon{ font-size:52px; margin-bottom:24px; }
+  .onboard-title{ font-family:'Fraunces','Fraunces-fallback',serif; font-size:24px; margin-bottom:12px; }
+  .onboard-desc{ font-size:14.5px; color:#C9D6CC; line-height:1.55; max-width:280px; }
+  .onboard-dots{ display:flex; justify-content:center; gap:6px; margin:24px 0; }
+  .onboard-dot{ width:7px; height:7px; border-radius:50%; background: var(--line); }
+  .onboard-dot.active{ background: var(--rust); }
+  .onboard-actions{ display:flex; justify-content:space-between; align-items:center; }
+  .onboard-skip{ background:none; border:none; color: var(--sage); font-size:13px; cursor:pointer; font-family:'Inter',sans-serif; }
+  .onboard-next{ background: var(--rust); color:#fff; border:none; border-radius:10px; padding:12px 22px; font-size:14px; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- First-launch onboarding -->
+  <div class="onboard" id="onboard">
+    <div class="onboard-slide active" data-slide="1">
+      <div class="onboard-icon">🥾</div>
+      <div class="onboard-title serif">Tips that travel with you</div>
+      <div class="onboard-desc">Real travelers leave tips about hotels, roads, and scams — passed phone to phone, even with zero signal.</div>
+    </div>
+    <div class="onboard-slide" data-slide="2">
+      <div class="onboard-icon">✅</div>
+      <div class="onboard-title serif">Only real, checked-in tips</div>
+      <div class="onboard-desc">A tip only gets a Verified badge after someone scans a QR code at the actual location. No fake reviews.</div>
+    </div>
+    <div class="onboard-slide" data-slide="3">
+      <div class="onboard-icon">🗣️</div>
+      <div class="onboard-title serif">தமிழிலும் பேசலாம்</div>
+      <div class="onboard-desc">Switch to Tamil anytime, or just ask out loud — Namma Tour understands and replies in your language.</div>
+    </div>
+    <div class="onboard-dots">
+      <div class="onboard-dot active" data-dot="1"></div>
+      <div class="onboard-dot" data-dot="2"></div>
+      <div class="onboard-dot" data-dot="3"></div>
+    </div>
+    <div class="onboard-actions">
+      <button class="onboard-skip" id="onboardSkip">Skip</button>
+      <button class="onboard-next" id="onboardNext">Next</button>
+    </div>
+  </div>
+
+  <div class="header">
+    <svg class="topo" viewBox="0 0 480 200" preserveAspectRatio="none">
+      <path d="M-10,60 C80,20 160,90 240,50 S400,20 490,60" stroke="#F4EFE1" stroke-width="1" fill="none"/>
+      <path d="M-10,90 C80,50 160,120 240,80 S400,50 490,90" stroke="#F4EFE1" stroke-width="1" fill="none"/>
+      <path d="M-10,120 C80,80 160,150 240,110 S400,80 490,120" stroke="#F4EFE1" stroke-width="1" fill="none"/>
+      <path d="M-10,150 C80,110 160,180 240,140 S400,110 490,150" stroke="#F4EFE1" stroke-width="1" fill="none"/>
+    </svg>
+
+    <div class="header-top">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 24 24" fill="none">
+          <path d="M12 2 L20 20 L12 15 L4 20 Z" fill="#C77B3F"/>
+        </svg>
+        <span class="brand-name serif">Namma Tour</span>
+      </div>
+      <div class="header-right">
+        <div class="lang-toggle">
+          <button class="lang-btn active" id="langEn">EN</button>
+          <button class="lang-btn" id="langTa">தமிழ்</button>
+        </div>
+        <div class="signal offline" id="signalPill">
+          <span class="signal-dot pulse" id="signalDot"></span>
+          <span id="signalText">No signal</span>
+        </div>
+      </div>
+    </div>
+
+    <h1 class="tagline" id="tagline">Tips that travel <em>where signal doesn't.</em></h1>
+    <p class="subtag" id="subtag">Left behind by the traveler before you. Passed on, phone to phone — no network required.</p>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-num" id="statTips">7</div>
+        <div class="stat-label" id="labelTips">tips on this phone</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num" id="statVerified">5</div>
+        <div class="stat-label" id="labelVerified">verified on-site</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">3</div>
+        <div class="stat-label" id="labelNearby">travelers nearby</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="install-banner" id="installBanner">
+      <div class="install-banner-text"><b>Install Namma Tour</b><span id="installBannerSub">Add it to your home screen — opens instantly, works offline.</span></div>
+      <button id="installBtn">Install</button>
+      <button class="install-dismiss" id="installDismiss">✕</button>
+    </div>
+
+    <div id="trailView">
+      <div class="section-label" id="sectionLabel">NEAR MUNNAR &middot; LAST SYNCED 40 MIN AGO</div>
+
+      <div class="search-row">
+        <div class="search-box">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+          <input type="text" id="searchInput" placeholder="Search a place...">
+        </div>
+      </div>
+      <div class="filter-chips">
+        <div class="chip active" data-filter="all" id="chipAll">All</div>
+        <div class="chip" data-filter="good" id="chipGood">👍 Worth it</div>
+        <div class="chip" data-filter="warn" id="chipWarn">⚠️ Heads up</div>
+      </div>
+
+      <div class="quick-actions">
+        <button class="quick-btn" id="syncBtn">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h16M14 6l6 6-6 6"/></svg>
+          <span id="syncBtnLabel">Sync nearby</span>
+        </button>
+        <button class="quick-btn" id="voiceAskBtn">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4M8 22h8"/></svg>
+          <span id="voiceAskLabel">Ask by voice</span>
+        </button>
+      </div>
+
+      <div class="cloud-status">
+        <span class="cloud-dot" id="cloudDot"></span>
+        <span id="cloudStatusText">Cloud sync not connected yet</span>
+      </div>
+
+      <div class="verify-row">
+        <div class="verify-btn" id="scanQrBtn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><rect x="7" y="7" width="10" height="10" rx="1"/></svg>
+          <span id="scanQrLabel">Scan QR to check in</span>
+        </div>
+        <div class="verify-btn" id="showQrBtn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3zM19 14h2v2h-2zM14 19h2v2h-2zM19 19h2v2h-2z"/></svg>
+          <span id="showQrLabel">Show demo QR</span>
+        </div>
+      </div>
+
+      <div id="feed"></div>
+      <div class="empty-state" id="emptyState">No tips match your search — try a different place.</div>
+    </div>
+
+    <div id="mapView">
+      <div class="section-label">TRAIL MAP &middot; TAP A MARKER</div>
+      <div class="map-card">
+        <svg viewBox="0 0 320 420" id="trailMapSvg">
+          <path d="M40,30 C120,60 40,120 100,160 S220,220 160,270 S60,330 140,390" stroke="#C9BFA0" stroke-width="3" fill="none" stroke-dasharray="2 10" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="map-legend">
+        <span><span class="legend-dot good"></span> Worth it</span>
+        <span><span class="legend-dot warn"></span> Heads up</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" id="tabTrail">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+      <span id="tabTrailLabel">Trail</span>
+    </button>
+    <button class="tab-fab" id="addBtn">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+    <button class="tab-btn" id="tabMap">
+      <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3v15M15 6v15M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/></svg>
+      <span id="tabMapLabel">Map</span>
+    </button>
+  </div>
+
+  <!-- Sync overlay -->
+  <div class="overlay" id="overlay">
+    <div class="sync-visual">
+      <div class="phone-dot left"></div>
+      <div class="beam"></div>
+      <div class="packet"></div>
+      <div class="packet" style="animation-delay:0.4s"></div>
+      <div class="packet" style="animation-delay:0.8s"></div>
+      <div class="phone-dot right"></div>
+    </div>
+    <div class="sync-status" id="syncStatus">Looking for nearby phones&hellip;</div>
+    <div class="sync-sub" id="syncSub">Namma Tour exchanges tips directly over Bluetooth &mdash; no data, no signal, no server.</div>
+  </div>
+
+  <!-- Add tip modal -->
+  <div class="modal" id="modal">
+    <div class="sheet">
+      <h3 class="serif" id="modalTitle">Leave a tip for the next traveler</h3>
+      <div class="sheet-sub" id="modalSub">Stored on your phone now. Uploads automatically once you're back online.</div>
+      <div class="type-row">
+        <div class="type-btn active good" id="typeGood" data-type="good">👍 Worth it</div>
+        <div class="type-btn warn" id="typeWarn" data-type="warn">⚠️ Heads up</div>
+      </div>
+      <div class="field">
+        <label id="labelPlace">PLACE</label>
+        <input type="text" id="inputPlace" placeholder="e.g. Green Valley Homestay">
+      </div>
+      <div class="field">
+        <div class="field-row">
+          <label id="labelYourTip">YOUR TIP</label>
+          <button class="mic-btn" id="micDictateBtn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v1a7 7 0 0 1-14 0v-1M12 18v4M8 22h8"/></svg>
+            <span id="micDictateLabel">Speak instead</span>
+          </button>
+        </div>
+        <textarea id="inputBody" placeholder="What should the next traveler know?"></textarea>
+      </div>
+      <div class="sheet-actions">
+        <button class="btn btn-cancel" id="cancelBtn">Cancel</button>
+        <button class="btn btn-add" id="saveTipBtn">Save tip</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR scan (camera) modal -->
+  <div class="cam-modal" id="camModal">
+    <button class="cam-close" id="camCloseBtn">✕</button>
+    <div class="cam-video-wrap">
+      <video id="camVideo" playsinline autoplay muted></video>
+    </div>
+    <div class="sync-status" id="camStatus" style="font-size:16px;">Point at a check-in QR code</div>
+    <div class="sync-sub" id="camSub">Held at the hotel or spot itself &mdash; this proves you're really there.</div>
+  </div>
+
+  <!-- QR display (demo) modal -->
+  <div class="cam-modal" id="qrModal">
+    <button class="cam-close" id="qrCloseBtn">✕</button>
+    <div class="qr-canvas-wrap"><div id="qrDisplayBox"></div></div>
+    <div class="sync-status" id="qrModalTitle" style="font-size:16px;">Green Valley Homestay</div>
+    <div class="sync-sub" id="qrModalSub">Scan this with another phone's "Scan QR to check in" to see a live verified check-in.</div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+  /* ---------------- translations ---------------- */
+  const translations = {
+    en: {
+      tagline: 'Tips that travel <em>where signal doesn\u2019t.</em>',
+      subtag: 'Left behind by the traveler before you. Passed on, phone to phone \u2014 no network required.',
+      labelTips: 'tips on this phone',
+      labelVerified: 'verified on-site',
+      labelNearby: 'travelers nearby',
+      sectionLabel: 'NEAR MUNNAR &middot; LAST SYNCED 40 MIN AGO',
+      voiceAskLabel: 'Ask by voice',
+      syncBtnLabel: 'Sync nearby',
+      addBtnLabel: 'Leave a tip',
+      signalOffline: 'No signal',
+      signalOnline: 'Online \u00b7 queue synced',
+      syncStatus1: 'Looking for nearby phones\u2026',
+      syncSub1: 'Namma Tour exchanges tips directly over Bluetooth \u2014 no data, no signal, no server.',
+      syncStatus2: '1 phone found \u2014 exchanging tips\u2026',
+      syncSub2: 'Trading tips left by other travelers on this trail.',
+      syncStatus3: '2 new tips received',
+      syncSub3: 'Added to your trail feed below.',
+      modalTitle: 'Leave a tip for the next traveler',
+      modalSub: 'Stored on your phone now. Uploads automatically once you\u2019re back online.',
+      typeGood: '\ud83d\udc4d Worth it',
+      typeWarn: '\u26a0\ufe0f Heads up',
+      labelPlace: 'PLACE',
+      placeholderPlace: 'e.g. Green Valley Homestay',
+      labelYourTip: 'YOUR TIP',
+      placeholderTip: 'What should the next traveler know?',
+      micDictateLabel: 'Speak instead',
+      micListening: 'Listening\u2026',
+      cancel: 'Cancel',
+      saveTip: 'Save tip',
+      toastFillFirst: 'Add a place and a tip first',
+      toastSaved: 'Tip saved & uploaded',
+      toastSavedOffline: 'Tip saved \u2014 will upload when back online',
+      toastSynced: '2 tips synced device-to-device',
+      voiceNotSupported: 'Voice search needs Chrome on Android for this demo',
+      voiceNoMatch: 'No matching tip found \u2014 try another place name',
+      worthIt: 'Worth it',
+      headsUp: 'Heads up',
+      cloudNotConnected: 'Cloud sync not connected yet',
+      cloudLive: 'Cloud sync live',
+      scanQrLabel: 'Scan QR to check in',
+      showQrLabel: 'Show demo QR',
+      camStatus: 'Point at a check-in QR code',
+      camSub: 'Held at the hotel or spot itself \u2014 this proves you\u2019re really there.',
+      qrModalSub: 'Scan this with another phone\u2019s "Scan QR to check in" to see a live verified check-in.',
+      checkinSuccess: 'Checked in \u2014 you can now leave a verified tip here',
+      checkinAlready: 'Already checked in here',
+      camNotSupported: 'Camera needs permission or isn\u2019t supported on this browser',
+      tabTrail: 'Trail',
+      tabMap: 'Map',
+    },
+    ta: {
+      tagline: '\u0b9a\u0bbf\u0b95\u0bcd\u0ba9\u0bb2\u0bcd \u0b87\u0bb2\u0bcd\u0bb2\u0bbe\u0ba4 <em>\u0b87\u0b9f\u0ba4\u0bcd\u0ba4\u0bbf\u0bb2\u0bc1\u0bae\u0bcd \u0baa\u0baf\u0ba3\u0bbf\u0b95\u0bcd\u0b95\u0bc1\u0bae\u0bcd \u0b95\u0bc1\u0bb1\u0bbf\u0baa\u0bcd\u0baa\u0bc1\u0b95\u0bb3\u0bcd.</em>',
+      subtag: '\u0bae\u0bc1\u0ba8\u0bcd\u0ba4\u0bc8\u0baf \u0baa\u0baf\u0ba3\u0bbf \u0bb5\u0bbf\u0b9f\u0bcd\u0b9f\u0bc1\u0b9a\u0bcd \u0b9a\u0bc6\u0ba9\u0bcd\u0bb1\u0ba4\u0bc1. \u0baa\u0bcb\u0ba9\u0bcd \u0bae\u0bc2\u0bb2\u0bae\u0bcd \u0baa\u0bcb\u0ba9\u0bcd \u2014 \u0b87\u0ba3\u0bc8\u0baf\u0bae\u0bcd \u0ba4\u0bc7\u0bb5\u0bc8\u0baf\u0bbf\u0bb2\u0bcd\u0bb2\u0bc8.',
+      labelTips: '\u0b87\u0ba8\u0bcd\u0ba4 \u0baa\u0bcb\u0ba9\u0bbf\u0bb2\u0bcd \u0b89\u0bb3\u0bcd\u0bb3 \u0b95\u0bc1\u0bb1\u0bbf\u0baa\u0bcd\u0baa\u0bc1\u0b95\u0bb3\u0bcd',
+      labelVerified: '\u0ba8\u0bc7\u0bb0\u0b9f\u0bbf\u0baf\u0bbe\u0b95 \u0b9a\u0bb0\u0bbf\u0baa\u0bbe\u0bb0\u0bcd\u0b95\u0bcd\u0b95\u0baa\u0bcd\u0baa\u0b9f\u0bcd\u0b9f\u0ba4\u0bc1',
+      labelNearby: '\u0b85\u0bb0\u0bc1\u0b95\u0bbf\u0bb2\u0bc1\u0bb3\u0bcd\u0bb3 \u0baa\u0baf\u0ba3\u0bbf\u0b95\u0bb3\u0bcd',
+      sectionLabel: '\u0bae\u0ba9\u0bcd\u0ba9\u0bbe\u0bb0\u0bcd \u0b85\u0bb0\u0bc1\u0b95\u0bbf\u0bb2\u0bcd \u00b7 40 \u0ba8\u0bbf\u0bae\u0bbf\u0b9f\u0b99\u0bcd\u0b95\u0bb3\u0bc1\u0b95\u0bcd\u0b95\u0bc1 \u0bae\u0bc1\u0ba9\u0bcd \u0b92\u0ba4\u0bcd\u0ba4\u0bbf\u0b9a\u0bc8\u0b95\u0bcd\u0b95\u0baa\u0bcd\u0baa\u0b9f\u0bcd\u0b9f\u0ba4\u0bc1',
+      voiceAskLabel: '\u0b95\u0bc1\u0bb0\u0bb2\u0bcd \u0bae\u0bc2\u0bb2\u0bae\u0bcd \u0b95\u0bc7\u0bb3\u0bc1\u0b99\u0bcd\u0b95\u0bb3\u0bcd',
+      syncBtnLabel: '\u0b85\u0bb0\u0bc1\u0b95\u0bbf\u0bb2\u0bcd \u0b92\u0ba4\u0bcd\u0ba4\u0bbf\u0b9a\u0bc8',
+      addBtnLabel: '\u0b95\u0bc1\u0bb1\u0bbf\u0baa\u0bcd\u0baa\u0bc1 \u0baa\u0b95\u0bbf\u0bb0\u0bb5\u0bc1\u0bae\u0bcd',
+      signalOffline: '\u0b9a\u0bbf\u0b95\u0bcd\u0ba9\u0bb2\u0bcd \u0b87\u0bb2\u0bcd\u0bb2\u0bc8',
+      signalOnline: '\u0b86\u0ba9\u0bcd\u0bb2\u0bc8\u0ba9\u0bcd \u00b7 \u0bb5\u0bb0\u0bbf\u0b9a\u0bc8 \u0b92\u0ba4\u0bcd\u0ba4\u0bbf\u0b9a\u0bc8\u0bb5\u0bc1',
+      syncStatus1: '\u0b85\u0bb0\u0bc1\u0b95\u0bbf\u0bb2\u0bc1\u0bb3\u0bcd\u0bb3 \u0baa\u0bcb\u0ba9\u0bcd\u0b95\u0bb3\u0bc8 \u0ba4\u0bc7\u0b9f\u0bc1\u0b95\u0bbf\u0bb1\u0ba4\u0bc1\u2026',
+      syncSub1: '\u0ba8\u0bae\u0bcd\u0bae \u0b9f\u0bc2\u0bb0\u0bcd \u0baa\u0bc1\u0bb3\u0bc2\u0b9f\u0bc2\u0ba4\u0bcd \u0bae\u0bc2\u0bb2\u0bae\u0bcd \u0ba8\u0bc7\u0bb0\u0b9f\u0bbf\u0baf\u0bbe\u0b95 \u0b95\u0bc1\u0bb1\u0bbf\u0baa\u0bcd\u0baa\u0bc1\u0b95\u0bb3\u0bc8 \u0baa\u0bb0\u0bbf\u0bae\u0bbe\u0bb1\u0bc1\u0b95\u0bbf\u0bb1\u0ba4\u0bc1 \u2014 \u0ba4\u0bb0\u0bb5\u0bc1 \u0b87\u0bb2\u0bcd\u0bb2\u0bc8, \u0b9a\u0bbf\u0b95\u0bcd\u0ba9\u0bb2\u0bcd \u0b87\u0bb2\u0bcd\u0bb2\u0bc8, \u0b9a\u0bb0\u0bcd\u0bb5\u0bb0\u0bcd \u0b87\u0bb2\u0bcd\u0bb2\u0bc8.',
+      syncStatus2: '1 \u0baa\u0bcb\u0ba9\u0bcd \u0b95\u0ba3\u0bcd\u0b9f\u0bb1\u0bbf\u0baf\u0baa\u0bcd\u0baa\u0b9f\u0bcd\u0b9f\u0ba4\u0bc1 \u2014 \u0b95\u0bc1\u0bb1\u0bbf\u0baa\u0bcd\u0baa\u0bc1\u0b95\u0bb3\u0bcd \u0baa\u0bb0\u0bbf\u0bae\u0bbe\u0bb1\u0bcd\u0bb1\u0bae\u0bcd\u2026',
+      syncSub2: '\u0b87\u0ba8\u0bcd\u0ba4 \u0baa\u0bbe\u0ba4\u0bc8\u0baf\u0bbf\u0bb2\u0bcd \u0bae\u0bb1\u0bcd\u0bb1 \u0baa\u0baf\u0ba3\u0bbf\u0b95\u0bb3\u0bcd \u0bb5\u0bbf\u0b9f\u0bcd\u0b9f\u0bc1\u0b9a\u0bcd \u0b9a\u0bc6\u0ba9\u0bcd\u0bb1 \u0b95\u0bc1\u0bb1\u0bbf\u0baa\u0bcd\u0baa\u0bc1\u0b95\u0bb3\u0bc8 \u0baa\u0bb0\u0bbf\u0bae\u0bbe\u0bb1\u0bc1\u0b95\u0bbf\u0bb1\u0ba4\u0bc1.',
+      syncStatus3: '2 \u0baa\u0bc1\u0ba4\u0bbf\u0baf \u0b95\u0bc1\u0bb1\u0bbf\u0baa\u0bcd\u0baa\u0bc1\u0b95\u0bb3\u0bcd \u0baa\u0bc6\u0bb1\u0baa\u0bcd\u0baa\u0b9f\u0bcd\u0b9f\u0ba9',
+      syncSub3: '\u0b95\u0bc0\u0bb4\u0bc7 \u0b89\u0b99\u0bcd\u0b95\u0bb3\u0bcd \u0baa\u0bbe\u0ba4\u0bc8 \u0baa\u0b9f\u0bcd\u0b9f\u0bbf\u0baf\u0bb2\u0bbf\u0bb2\u0bcd \u0b9a\u0bc7\u0bb0\u0bcd\u0b95\u0bcd\u0b95\u0baa\u0bcd\u0baa\u0b9f\u0bcd\u0b9f\u0ba4\u0bc1.',
+      modalTitle: '\u0b85\u0b9f\u0bc1\u0ba4\u0bcd\u0ba4 \u0baa\u0baf\u0ba3\u0bbf\u0b95\u0bcd\u0b95\u0bc1 \u0b92\u0bb0\u0bc1 \u0b95\u0bc1\u0bb1\u0bbf\u0baa\u0bcd\u0baa\u0bc8 \u0bb5\u0bbf\u0b9f\u0bc1\u0b99\u0bcd\u0b95\u0bb3\u0bcd',
+      modalSub: '\u0b87\u0baa\u0bcd\u0baa\u0bcb\u0ba4\u0bc1 \u0b89\u0b99\u0bcd\u0b95\u0bb3\u0bcd \u0baa\u0bcb\u0ba9\u0bbf\u0bb2\u0bcd \u0b9a\u0bc7\u0bae\u0bbf\u0b95\u0bcd\u0b95\u0baa\u0bcd\u0baa\u0b9f\u0bcd\u0b9f\u0ba4\u0bc1. \u0bae\u0bc0\u0ba3\u0bcd\u0b9f\u0bc1\u0bae\u0bcd \u0b86\u0ba9\u0bcd\u0bb2\u0bc8\u0ba9\u0bc1\u0b95\u0bcd\u0b95\u0bc1 \u0bb5\u0ba8\u0bcd\u0ba4\u0bb5\u0bc1\u0b9f\u0ba9\u0bcd \u0ba4\u0bbe\u0ba9\u0bbe\u0b95 \u0baa\u0ba4\u0bbf\u0bb5\u0bc7\u0bb1\u0bcd\u0bb1\u0baa\u0bcd\u0baa\u0b9f\u0bc1\u0bae\u0bcd.',
+      typeGood: '\ud83d\udc4d \u0bae\u0ba4\u0bbf\u0baa\u0bcd\u0baa\u0bc1\u0bb3\u0bcd\u0bb3\u0ba4\u0bc1',
+      typeWarn: '\u26a0\ufe0f \u0b8e\u0b9a\u0bcd\u0b9a\u0bb0\u0bbf\u0b95\u0bcd\u0b95\u0bc8',
+      labelPlace: '\u0b87\u0b9f\u0bae\u0bcd',
+      placeholderPlace: '\u0b8e.\u0b95\u0bbe. \u0b95\u0bbf\u0bb0\u0bc0\u0ba9\u0bcd \u0bb5\u0bc7\u0bb2\u0bbf \u0bb9\u0bcb\u0bae\u0bcd\u0bb8\u0bcd\u0b9f\u0bc7',
+      labelYourTip: '\u0b89\u0b99\u0bcd\u0b95\u0bb3\u0bcd \u0b95\u0bc1\u0bb1\u0bbf\u0baa\u0bcd\u0baa\u0bc1',
+      placeholderTip: '\u0b85\u0b9f\u0bc1\u0ba4\u0bcd\u0ba4 \u0baa\u0baf\u0ba3\u0bbf \u0b8e\u0ba9\u0bcd\u0ba9 \u0ba4\u0bc6\u0bb0\u0bbf\u0ba8\u0bcd\u0ba4\u0bc1\u0b95\u0bca\u0bb3\u0bcd\u0bb3 \u0bb5\u0bc7\u0ba3\u0bcd\u0b9f\u0bc1\u0bae\u0bcd?',
+      micDictateLabel: '\u0baa\u0bc7\u0b9a\u0bbf \u0b9a\u0bca\u0bb2\u0bcd\u0bb2\u0bc1\u0b99\u0bcd\u0b95\u0bb3\u0bcd',
+      micListening: '\u0b95\u0bc7\u0b9f\u0bcd\u0b95\u0bbf\u0bb1\u0ba4\u0bc1\u2026',
+      cancel: '\u0bb0\u0ba4\u0bcd\u0ba4\u0bc1 \u0b9a\u0bc6\u0baf\u0bcd',
+      saveTip: '\u0b95\u0bc1\u0bb1\u0bbf\u0baa\u0bcd\u0baa\u0bc8 \u0b9a\u0bc7\u0bae\u0bbf',
+      toastFillFirst: '\u0bae\u0bc1\u0ba9\u0bcd\u0ba9\u0bb0\u0bcd \u0b92\u0bb0\u0bc1 \u0b87\u0b9f\u0ba4\u0bcd\u0ba4\u0bc8\u0baf\u0bc1\u0bae\u0bcd \u0b95\u0bc1\u0bb1\u0bbf\u0baa\u0bcd\u0baa\u0bc8\u0baf\u0bc1\u0bae\u0bcd \u0b9a\u0bc7\u0bb0\u0bcd\u0b95\u0bcd\u0b95\u0bb5\u0bc1\u0bae\u0bcd',
+      toastSaved: '\u0b95\u0bc1\u0bb1\u0bbf\u0baa\u0bcd\u0baa\u0bc1 \u0b9a\u0bc7\u0bae\u0bbf\u0b95\u0bcd\u0b95\u0baa\u0bcd\u0baa\u0b9f\u0bcd\u0b9f\u0bc1 \u0baa\u0ba4\u0bbf\u0bb5\u0bc7\u0bb1\u0bcd\u0bb1\u0baa\u0bcd\u0baa\u0b9f\u0bcd\u0b9f\u0ba4\u0bc1',
+      toastSavedOffline: '\u0b95\u0bc1\u0bb1\u0bbf\u0baa\u0bcd\u0baa\u0bc1 \u0b9a\u0bc7\u0bae\u0bbf\u0b95\u0bcd\u0b95\u0baa\u0bcd\u0baa\u0b9f\u0bcd\u0b9f\u0ba4\u0bc1 \u2014 \u0bae\u0bc0\u0ba3\u0bcd\u0b9f\u0bc1\u0bae\u0bcd \u0b86\u0ba9\u0bcd\u0bb2\u0bc8\u0ba9\u0bbf\u0bb2\u0bcd \u0bb5\u0ba8\u0bcd\u0ba4\u0bb5\u0bc1\u0b9f\u0ba9\u0bcd \u0baa\u0ba4\u0bbf\u0bb5\u0bc7\u0bb1\u0bc1\u0bae\u0bcd',
+      toastSynced: '2 \u0b95\u0bc1\u0bb1\u0bbf\u0baa\u0bcd\u0baa\u0bc1\u0b95\u0bb3\u0bcd \u0b9a\u0bbe\u0ba4\u0ba9\u0b99\u0bcd\u0b95\u0bb3\u0bc1\u0b95\u0bcd\u0b95\u0bbf\u0b9f\u0bc8\u0baf\u0bc7 \u0b92\u0ba4\u0bcd\u0ba4\u0bbf\u0b9a\u0bc8\u0b95\u0bcd\u0b95\u0baa\u0bcd\u0baa\u0b9f\u0bcd\u0b9f\u0ba9',
+      voiceNotSupported: '\u0b87\u0ba8\u0bcd\u0ba4 \u0b9a\u0bcb\u0ba4\u0ba9\u0bc8\u0b95\u0bcd\u0b95\u0bc1 Android \u0b87\u0bb2\u0bcd Chrome \u0ba4\u0bc7\u0bb5\u0bc8',
+      voiceNoMatch: '\u0baa\u0bca\u0bb0\u0bc1\u0ba8\u0bcd\u0ba4\u0bc1\u0bae\u0bcd \u0b95\u0bc1\u0bb1\u0bbf\u0baa\u0bcd\u0baa\u0bc1 \u0b95\u0bbf\u0b9f\u0bc8\u0b95\u0bcd\u0b95\u0bb5\u0bbf\u0bb2\u0bcd\u0bb2\u0bc8',
+      worthIt: '\u0bae\u0ba4\u0bbf\u0baa\u0bcd\u0baa\u0bc1\u0bb3\u0bcd\u0bb3\u0ba4\u0bc1',
+      headsUp: '\u0b8e\u0b9a\u0bcd\u0b9a\u0bb0\u0bbf\u0b95\u0bcd\u0b95\u0bc8',
+      cloudNotConnected: '\u0bae\u0bc7\u0b95 \u0b92\u0ba4\u0bcd\u0ba4\u0bbf\u0b9a\u0bc8\u0bb5\u0bc1 \u0b87\u0ba9\u0bcd\u0ba9\u0bc1\u0bae\u0bcd \u0b87\u0ba3\u0bc8\u0b95\u0bcd\u0b95\u0baa\u0bcd\u0baa\u0b9f\u0bb2\u0bcd\u0bb2\u0bc8',
+      cloudLive: '\u0bae\u0bc7\u0b95 \u0b92\u0ba4\u0bcd\u0ba4\u0bbf\u0b9a\u0bc8\u0bb5\u0bc1 \u0b9a\u0bc6\u0baf\u0bb2\u0bbf\u0bb2\u0bcd \u0b89\u0bb3\u0bcd\u0bb3\u0ba4\u0bc1',
+      scanQrLabel: 'QR \u0bb8\u0bcd\u0b95\u0bc7\u0ba9\u0bcd \u0b9a\u0bc6\u0baf\u0bcd\u0ba4\u0bc1 \u0b9a\u0bc6\u0b95\u0bcd \u0b87\u0ba9\u0bcd \u0b9a\u0bc6\u0baf\u0bcd\u0baf\u0bc1\u0b99\u0bcd\u0b95\u0bb3\u0bcd',
+      showQrLabel: 'QR \u0b95\u0bbe\u0bb3\u0bcd\u0b95\u0bbf\u0baf\u0bc8 \u0b95\u0bbe\u0ba3\u0bcd\u0baa\u0bbf',
+      camStatus: '\u0b9a\u0bc6\u0b95\u0bcd \u0b87\u0ba9\u0bcd QR \u0b95\u0bcb\u0b9f\u0bcd\u0b9f\u0bc8 \u0b8e\u0ba4\u0bbf\u0bb0\u0bcd\u0ba8\u0bcd\u0ba4\u0bc1 \u0baa\u0bbf\u0b9f\u0bbf\u0b95\u0bcd\u0b95\u0bb5\u0bc1\u0bae\u0bcd',
+      camSub: '\u0b87\u0b9f\u0ba4\u0bcd\u0ba4\u0bbf\u0bb2\u0bc7\u0baf\u0bc7 \u0bb5\u0bc8\u0ba4\u0bcd\u0ba4\u0bc1\u0bb3\u0bcd\u0bb3\u0ba4\u0bc1 \u2014 \u0ba8\u0bc0\u0b99\u0bcd\u0b95\u0bb3\u0bcd \u0b89\u0ba3\u0bcd\u0bae\u0bc8\u0baf\u0bbe\u0b95\u0bb5\u0bc7 \u0b87\u0b99\u0bcd\u0b95\u0bc1 \u0b87\u0bb0\u0bc1\u0baa\u0bcd\u0baa\u0ba4\u0bc8 \u0ba8\u0bbf\u0bb0\u0bc2\u0baa\u0bbf\u0b95\u0bcd\u0b95\u0bbf\u0bb1\u0ba4\u0bc1.',
+      qrModalSub: '\u0bae\u0bb1\u0bcd\u0bb1\u0bcb\u0bb0\u0bc1 \u0baa\u0bcb\u0ba9\u0bbf\u0bb2\u0bcd "QR \u0bb8\u0bcd\u0b95\u0bc7\u0ba9\u0bcd \u0b9a\u0bc6\u0baf\u0bcd\u0ba4\u0bc1 \u0b9a\u0bc6\u0b95\u0bcd \u0b87\u0ba9\u0bcd" \u0baa\u0baf\u0ba9\u0bcd\u0baa\u0b9f\u0bc1\u0ba4\u0bcd\u0ba4\u0bbf \u0bb8\u0bcd\u0b95\u0bc7\u0ba9\u0bcd \u0b9a\u0bc6\u0baf\u0bcd\u0baf\u0bc1\u0b99\u0bcd\u0b95\u0bb3\u0bcd.',
+      checkinSuccess: '\u0b9a\u0bc6\u0b95\u0bcd \u0b87\u0ba9\u0bcd \u0bae\u0bc1\u0b9f\u0bbf\u0ba8\u0bcd\u0ba4\u0ba4\u0bc1 \u2014 \u0b87\u0baa\u0bcd\u0baa\u0bcb\u0ba4\u0bc1 \u0b87\u0b99\u0bcd\u0b95\u0bc1 \u0b9a\u0bb0\u0bbf\u0baa\u0bbe\u0bb0\u0bcd\u0b95\u0bcd\u0b95\u0baa\u0bcd\u0baa\u0b9f\u0bcd\u0b9f \u0b95\u0bc1\u0bb1\u0bbf\u0baa\u0bcd\u0baa\u0bc8 \u0bb5\u0bbf\u0b9f\u0bb2\u0bbe\u0bae\u0bcd',
+      checkinAlready: '\u0b87\u0baa\u0bcd\u0baa\u0bcb\u0ba4\u0bc7 \u0b87\u0b99\u0bcd\u0b95\u0bc1 \u0b9a\u0bc6\u0b95\u0bcd \u0b87\u0ba9\u0bcd \u0b86\u0b95\u0bbf\u0bb5\u0bbf\u0b9f\u0bcd\u0b9f\u0ba4\u0bc1',
+      camNotSupported: '\u0b95\u0bc7\u0bae\u0bb0\u0bbe\u0bb5\u0bc1\u0b95\u0bcd\u0b95\u0bc1 \u0b85\u0ba9\u0bc1\u0bae\u0ba4\u0bbf \u0ba4\u0bc7\u0bb5\u0bc8 \u0b85\u0bb2\u0bcd\u0bb2\u0ba4\u0bc1 \u0b87\u0ba8\u0bcd\u0ba4 \u0b89\u0bb2\u0bbe\u0bb5\u0bbf\u0baf\u0bbf\u0bb2\u0bcd \u0b86\u0ba4\u0bb0\u0bb5\u0bbf\u0bb2\u0bcd\u0bb2\u0bc8',
+      tabTrail: '\u0baa\u0bbe\u0ba4\u0bc8',
+      tabMap: '\u0bb5\u0bb0\u0bc8\u0baa\u0b9f\u0bae\u0bcd',
+    }
+  };
+
+  let currentLang = 'en';
+
+  function applyLanguage(lang){
+    currentLang = lang;
+    const t = translations[lang];
+    document.getElementById('langEn').classList.toggle('active', lang==='en');
+    document.getElementById('langTa').classList.toggle('active', lang==='ta');
+    document.getElementById('tagline').innerHTML = t.tagline;
+    document.getElementById('subtag').textContent = t.subtag;
+    document.getElementById('labelTips').textContent = t.labelTips;
+    document.getElementById('labelVerified').textContent = t.labelVerified;
+    document.getElementById('labelNearby').textContent = t.labelNearby;
+    document.getElementById('sectionLabel').innerHTML = t.sectionLabel;
+    document.getElementById('voiceAskLabel').textContent = t.voiceAskLabel;
+    document.getElementById('syncBtnLabel').textContent = t.syncBtnLabel;
+    document.getElementById('tabTrailLabel').textContent = t.tabTrail;
+    document.getElementById('tabMapLabel').textContent = t.tabMap;
+    document.getElementById('modalTitle').textContent = t.modalTitle;
+    document.getElementById('modalSub').textContent = t.modalSub;
+    document.getElementById('typeGood').textContent = t.typeGood;
+    document.getElementById('typeWarn').textContent = t.typeWarn;
+    document.getElementById('labelPlace').textContent = t.labelPlace;
+    document.getElementById('inputPlace').placeholder = t.placeholderPlace;
+    document.getElementById('labelYourTip').textContent = t.labelYourTip;
+    document.getElementById('inputBody').placeholder = t.placeholderTip;
+    document.getElementById('micDictateLabel').textContent = t.micDictateLabel;
+    document.getElementById('cancelBtn').textContent = t.cancel;
+    document.getElementById('saveTipBtn').textContent = t.saveTip;
+    document.getElementById('scanQrLabel').textContent = t.scanQrLabel;
+    document.getElementById('showQrLabel').textContent = t.showQrLabel;
+    document.getElementById('camStatus').textContent = t.camStatus;
+    document.getElementById('camSub').textContent = t.camSub;
+    document.getElementById('qrModalSub').textContent = t.qrModalSub;
+    document.getElementById('cloudStatusText').textContent = firebaseReady ? t.cloudLive : t.cloudNotConnected;
+    updateSignal();
+  }
+
+  document.getElementById('langEn').addEventListener('click', () => applyLanguage('en'));
+  document.getElementById('langTa').addEventListener('click', () => applyLanguage('ta'));
+
+  /* ---------------- tips data ---------------- */
+  const allTips = [];
+  const seedTips = [
+    { place:"Green Valley Homestay", body:"Owner speaks Tamil & English. \u20b9900/night, hot water only after 7am. Worth it.", type:"good", verified:true, by:"verified stay \u00b7 2 days ago" },
+    { place:"Shortcut past Eravikulam gate", body:"Locals use the side path when the main queue is 1hr+. Ask at the tea stall.", type:"good", verified:true, by:"verified stay \u00b7 4 days ago" },
+    { place:"\u201cView Point\u201d taxi stand", body:"Quoted 3x the real fare to tourists. Use the stand near the bus stop instead.", type:"warn", verified:true, by:"verified stay \u00b7 5 days ago" },
+    { place:"Cardamom County Resort", body:"Beautiful but no signal at all, even wifi is patchy. Fine if you want to disconnect.", type:"good", verified:false, by:"unverified \u00b7 shared by a local" },
+    { place:"Road past KDH check post", body:"Landslide debris still being cleared, single-lane traffic, expect 30 min delay.", type:"warn", verified:true, by:"verified stay \u00b7 6 hrs ago" },
+  ];
+
+  const feed = document.getElementById('feed');
+  const statTips = document.getElementById('statTips');
+  const statVerified = document.getElementById('statVerified');
+
+  function renderTip(t, isNew=false){
+    allTips.unshift(t);
+    const card = document.createElement('div');
+    card.className = 'card' + (isNew ? ' new' : '');
+    card.dataset.type = t.type;
+    card.dataset.search = (t.place + ' ' + t.body).toLowerCase();
+    const t2 = translations[currentLang];
+    const tagLabel = t.type==='good' ? t2.worthIt : t2.headsUp;
+    const confirmCount = allTips.filter(x => x.verified && x.place.toLowerCase() === t.place.toLowerCase()).length;
+    const trustBadge = (t.verified && confirmCount > 1) ? `<span class="trust-badge">\uD83D\uDEE1\uFE0F \u00d7${confirmCount}</span>` : '';
+    card.innerHTML = `
+      <div class="card-top">
+        <div class="card-place serif">${t.place}</div>
+        <div class="card-tag ${t.type==='good' ? 'tag-good' : 'tag-warn'}">${tagLabel}</div>
+      </div>
+      <div class="card-body">${t.body}</div>
+      <div class="card-meta-row">
+        <div class="card-meta">
+          ${t.verified ? `<span class="verified">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+            Verified check-in
+          </span>${trustBadge} <span class="dot-sep">&middot;</span> ${t.by}` : t.by}
+        </div>
+        <button class="share-btn" data-place="${t.place.replace(/"/g,'&quot;')}" data-body="${t.body.replace(/"/g,'&quot;')}">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 3.9M15.4 6.6L8.6 10.5"/></svg>
+        </button>
+      </div>`;
+    feed.prepend(card);
+    applyFilters();
+  }
+
+  function refreshStats(){
+    const all = feed.querySelectorAll('.card').length;
+    const verified = feed.querySelectorAll('.verified').length;
+    statTips.textContent = all;
+    statVerified.textContent = verified;
+  }
+
+  seedTips.forEach(t => renderTip(t));
+  refreshStats();
+
+  /* ---------------- signal detection ---------------- */
+  const signalPill = document.getElementById('signalPill');
+  const signalDot = document.getElementById('signalDot');
+  const signalText = document.getElementById('signalText');
+  function updateSignal(){
+    const t = translations[currentLang];
+    if(navigator.onLine){
+      signalPill.className = 'signal online';
+      signalDot.classList.remove('pulse');
+      signalText.textContent = t.signalOnline;
+    } else {
+      signalPill.className = 'signal offline';
+      signalDot.classList.add('pulse');
+      signalText.textContent = t.signalOffline;
+    }
+  }
+  window.addEventListener('online', updateSignal);
+  window.addEventListener('offline', updateSignal);
+  updateSignal();
+
+  /* ---------------- toast ---------------- */
+  const toast = document.getElementById('toast');
+  function showToast(msg){
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(()=> toast.classList.remove('show'), 2400);
+  }
+
+  /* ---------------- haptic feedback ---------------- */
+  function haptic(){ if(navigator.vibrate) navigator.vibrate(12); }
+
+  /* ---------------- search + filter ---------------- */
+  let activeFilter = 'all';
+  const searchInput = document.getElementById('searchInput');
+  const emptyState = document.getElementById('emptyState');
+
+  function applyFilters(){
+    const q = searchInput.value.trim().toLowerCase();
+    let visibleCount = 0;
+    feed.querySelectorAll('.card').forEach(card => {
+      const matchesType = activeFilter === 'all' || card.dataset.type === activeFilter;
+      const matchesSearch = !q || card.dataset.search.includes(q);
+      const show = matchesType && matchesSearch;
+      card.style.display = show ? '' : 'none';
+      if(show) visibleCount++;
+    });
+    emptyState.classList.toggle('show', visibleCount === 0);
+  }
+  searchInput.addEventListener('input', applyFilters);
+
+  document.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeFilter = chip.dataset.filter;
+      haptic();
+      applyFilters();
+    });
+  });
+
+  /* ---------------- share tip ---------------- */
+  feed.addEventListener('click', (e) => {
+    const btn = e.target.closest('.share-btn');
+    if(!btn) return;
+    haptic();
+    const place = btn.dataset.place;
+    const body = btn.dataset.body;
+    const shareText = `${place} \u2014 ${body} (via Namma Tour)`;
+    if(navigator.share){
+      navigator.share({ title: 'Namma Tour tip', text: shareText }).catch(()=>{});
+    } else if(navigator.clipboard){
+      navigator.clipboard.writeText(shareText).then(() => showToast('Copied to clipboard'));
+    }
+  });
+
+  /* ---------------- install prompt banner ---------------- */
+  let deferredInstallPrompt = null;
+  const installBanner = document.getElementById('installBanner');
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    if(!localStorage.getItem('offtrail_install_dismissed')){
+      installBanner.classList.add('show');
+    }
+  });
+  document.getElementById('installBtn').addEventListener('click', async () => {
+    haptic();
+    if(!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    installBanner.classList.remove('show');
+  });
+  document.getElementById('installDismiss').addEventListener('click', () => {
+    installBanner.classList.remove('show');
+    localStorage.setItem('offtrail_install_dismissed', '1');
+  });
+
+  /* ---------------- onboarding (first launch only) ---------------- */
+  const onboard = document.getElementById('onboard');
+  let onboardSlide = 1;
+  function goToSlide(n){
+    document.querySelectorAll('.onboard-slide').forEach(s => s.classList.toggle('active', +s.dataset.slide === n));
+    document.querySelectorAll('.onboard-dot').forEach(d => d.classList.toggle('active', +d.dataset.dot === n));
+    onboardSlide = n;
+    document.getElementById('onboardNext').textContent = n === 3 ? 'Get started' : 'Next';
+  }
+  function closeOnboard(){
+    onboard.classList.remove('show');
+    localStorage.setItem('offtrail_onboarded', '1');
+  }
+  document.getElementById('onboardNext').addEventListener('click', () => {
+    haptic();
+    if(onboardSlide < 3){ goToSlide(onboardSlide + 1); } else { closeOnboard(); }
+  });
+  document.getElementById('onboardSkip').addEventListener('click', closeOnboard);
+  if(!localStorage.getItem('offtrail_onboarded')){
+    onboard.classList.add('show');
+  }
+
+  /* ---------------- tab bar: Trail / Map ---------------- */
+  const trailView = document.getElementById('trailView');
+  const mapView = document.getElementById('mapView');
+  const tabTrail = document.getElementById('tabTrail');
+  const tabMap = document.getElementById('tabMap');
+
+  function showTrailTab(){
+    trailView.classList.remove('hide');
+    mapView.classList.remove('show');
+    tabTrail.classList.add('active');
+    tabMap.classList.remove('active');
+  }
+  function showMapTab(){
+    trailView.classList.add('hide');
+    mapView.classList.add('show');
+    tabMap.classList.add('active');
+    tabTrail.classList.remove('active');
+    renderMapPins();
+  }
+  tabTrail.addEventListener('click', () => { haptic(); showTrailTab(); });
+  tabMap.addEventListener('click', () => { haptic(); showMapTab(); });
+
+  function renderMapPins(){
+    const svg = document.getElementById('trailMapSvg');
+    svg.querySelectorAll('.map-pin').forEach(p => p.remove());
+    const pathEl = svg.querySelector('path');
+    const totalLen = pathEl.getTotalLength();
+    const seen = new Map();
+    allTips.forEach(t => {
+      const key = t.place.toLowerCase();
+      if(!seen.has(key)) seen.set(key, t);
+    });
+    const places = Array.from(seen.values());
+    places.forEach((t, i) => {
+      const frac = (i + 1) / (places.length + 1);
+      const pt = pathEl.getPointAtLength(frac * totalLen);
+      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      g.setAttribute('class', 'map-pin ' + t.type);
+      g.setAttribute('transform', `translate(${pt.x},${pt.y})`);
+      g.innerHTML = `
+        <circle class="ring" r="12"></circle>
+        <circle class="dot" r="6"></circle>
+        <text x="0" y="-16" text-anchor="middle">${t.place.length > 16 ? t.place.slice(0,14)+'\u2026' : t.place}</text>
+      `;
+      g.addEventListener('click', () => {
+        haptic();
+        showTrailTab();
+        searchInput.value = t.place;
+        applyFilters();
+      });
+      svg.appendChild(g);
+    });
+  }
+
+  /* ---------------- sync flow ---------------- */
+  const overlay = document.getElementById('overlay');
+  const syncStatus = document.getElementById('syncStatus');
+  const syncSub = document.getElementById('syncSub');
+
+  document.getElementById('syncBtn').addEventListener('click', () => {
+    haptic();
+    const t = translations[currentLang];
+    overlay.classList.add('show');
+    syncStatus.textContent = t.syncStatus1;
+    syncSub.textContent = t.syncSub1;
+
+    setTimeout(() => {
+      syncStatus.textContent = t.syncStatus2;
+      syncSub.textContent = t.syncSub2;
+    }, 1400);
+
+    setTimeout(() => {
+      syncStatus.textContent = t.syncStatus3;
+      syncSub.textContent = t.syncSub3;
+    }, 2800);
+
+    setTimeout(() => {
+      overlay.classList.remove('show');
+      renderTip({ place:"Misty Meadows Tea Stall", body:"Best filter coffee on this whole route. Cash only, closes by 6pm.", type:"good", verified:true, by:"just synced \u00b7 from a nearby traveler" }, true);
+      renderTip({ place:"Bridge before Top Station", body:"Wooden planks loose on the left side, keep to the right when crossing.", type:"warn", verified:true, by:"just synced \u00b7 from a nearby traveler" }, true);
+      refreshStats();
+      showToast(translations[currentLang].toastSynced);
+    }, 3600);
+  });
+
+  /* ---------------- add tip modal ---------------- */
+  const modal = document.getElementById('modal');
+  const addBtn = document.getElementById('addBtn');
+  const cancelBtn = document.getElementById('cancelBtn');
+  const typeGood = document.getElementById('typeGood');
+  const typeWarn = document.getElementById('typeWarn');
+  let selectedType = 'good';
+
+  addBtn.addEventListener('click', () => modal.classList.add('show'));
+  cancelBtn.addEventListener('click', () => modal.classList.remove('show'));
+
+  typeGood.addEventListener('click', () => {
+    selectedType = 'good';
+    typeGood.classList.add('active'); typeWarn.classList.remove('active');
+  });
+  typeWarn.addEventListener('click', () => {
+    selectedType = 'warn';
+    typeWarn.classList.add('active'); typeGood.classList.remove('active');
+  });
+
+  document.getElementById('saveTipBtn').addEventListener('click', () => {
+    haptic();
+    const t = translations[currentLang];
+    const place = document.getElementById('inputPlace').value.trim();
+    const body = document.getElementById('inputBody').value.trim();
+    if(!place || !body){ showToast(t.toastFillFirst); return; }
+    const isVerified = checkedInPlaces.has(place.trim().toLowerCase());
+    const byText = isVerified
+      ? (currentLang==='ta' ? '\u0b9a\u0bb0\u0bbf\u0baa\u0bbe\u0bb0\u0bcd\u0b95\u0bcd\u0b95\u0baa\u0bcd\u0baa\u0b9f\u0bcd\u0b9f \u0ba4\u0b99\u0bcd\u0b95\u0bc1\u0bae\u0bbf\u0b9f\u0bae\u0bcd \u00b7 \u0b87\u0baa\u0bcd\u0baa\u0bcb\u0ba4\u0bc1' : 'verified stay \u00b7 just now')
+      : (currentLang==='ta' ? '\u0b9a\u0bb0\u0bbf\u0baa\u0bbe\u0bb0\u0bcd\u0b95\u0bcd\u0b95\u0baa\u0bcd\u0baa\u0b9f\u0bb2\u0bcd\u0bb2\u0bbe\u0ba4\u0ba4\u0bc1 \u00b7 QR \u0b9a\u0bc6\u0b95\u0bcd \u0b87\u0ba9\u0bcd \u0b87\u0bb2\u0bcd\u0bb2\u0bc8' : 'unverified \u00b7 no QR check-in yet');
+    const newTip = { place, body, type: selectedType, verified:isVerified, by: byText };
+    renderTip(newTip, true);
+    refreshStats();
+    pushTipToCloud(newTip);
+    document.getElementById('inputPlace').value='';
+    document.getElementById('inputBody').value='';
+    modal.classList.remove('show');
+    showToast(navigator.onLine ? t.toastSaved : t.toastSavedOffline);
+  });
+
+  /* ---------------- voice: speech recognition + synthesis ---------------- */
+  const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const voiceAskBtn = document.getElementById('voiceAskBtn');
+  const micDictateBtn = document.getElementById('micDictateBtn');
+
+  function speak(text, lang){
+    if(!('speechSynthesis' in window)) return;
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = lang;
+    speechSynthesis.speak(utter);
+  }
+
+  function findBestTip(transcript){
+    const q = transcript.toLowerCase();
+    let best = null, bestScore = 0;
+    allTips.forEach(tip => {
+      const words = tip.place.toLowerCase().split(/[^a-z0-9\u0b80-\u0bff]+/i).filter(w => w.length > 2);
+      let score = 0;
+      words.forEach(w => { if(q.includes(w)) score++; });
+      if(score > bestScore){ bestScore = score; best = tip; }
+    });
+    return bestScore > 0 ? best : null;
+  }
+
+  voiceAskBtn.addEventListener('click', () => {
+    const t = translations[currentLang];
+    if(!SpeechRecognitionAPI){ showToast(t.voiceNotSupported); return; }
+    const recog = new SpeechRecognitionAPI();
+    recog.lang = currentLang === 'ta' ? 'ta-IN' : 'en-IN';
+    recog.interimResults = false;
+    recog.maxAlternatives = 1;
+
+    voiceAskBtn.classList.add('listening');
+    voiceAskBtn.querySelector('span').textContent = t.micListening;
+
+    recog.start();
+
+    recog.onresult = (e) => {
+      const transcript = e.results[0][0].transcript;
+      const match = findBestTip(transcript);
+      if(match){
+        showToast(`"${transcript}" \u2192 ${match.place}`);
+        speak(match.body, recog.lang);
+      } else {
+        showToast(t.voiceNoMatch);
+      }
+    };
+    recog.onerror = () => { showToast(t.voiceNotSupported); };
+    recog.onend = () => {
+      voiceAskBtn.classList.remove('listening');
+      voiceAskBtn.querySelector('span').textContent = translations[currentLang].voiceAskLabel;
+    };
+  });
+
+  micDictateBtn.addEventListener('click', () => {
+    const t = translations[currentLang];
+    if(!SpeechRecognitionAPI){ showToast(t.voiceNotSupported); return; }
+    const recog = new SpeechRecognitionAPI();
+    recog.lang = currentLang === 'ta' ? 'ta-IN' : 'en-IN';
+    recog.interimResults = false;
+    recog.maxAlternatives = 1;
+
+    micDictateBtn.classList.add('listening');
+    const label = document.getElementById('micDictateLabel');
+    label.textContent = t.micListening;
+
+    recog.start();
+
+    recog.onresult = (e) => {
+      const transcript = e.results[0][0].transcript;
+      const textarea = document.getElementById('inputBody');
+      textarea.value = textarea.value ? (textarea.value + ' ' + transcript) : transcript;
+    };
+    recog.onerror = () => { showToast(t.voiceNotSupported); };
+    recog.onend = () => {
+      micDictateBtn.classList.remove('listening');
+      label.textContent = translations[currentLang].micDictateLabel;
+    };
+  });
+
+  /* ---------------- Firebase cloud sync ---------------- */
+  // STEP FOR YOU: replace the placeholder values below with YOUR OWN config
+  // from console.firebase.google.com (Project settings -> your web app).
+  // The app works fine without this too -- it just won't sync to the cloud.
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  };
+
+  let firebaseReady = false;
+  let db = null;
+  const cloudDot = document.getElementById('cloudDot');
+
+  try {
+    if (firebaseConfig.apiKey !== "YOUR_API_KEY" && typeof firebase !== 'undefined') {
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+      firebaseReady = true;
+      cloudDot.classList.add('live');
+      document.getElementById('cloudStatusText').textContent = translations[currentLang].cloudLive;
+      pullTipsFromCloud();
+    }
+  } catch(e) {
+    firebaseReady = false;
+  }
+
+  function pushTipToCloud(tip){
+    if(!firebaseReady || !navigator.onLine) return;
+    db.collection('tips').add({
+      place: tip.place, body: tip.body, type: tip.type,
+      verified: tip.verified, createdAt: Date.now()
+    }).catch(()=>{});
+  }
+
+  function pullTipsFromCloud(){
+    if(!firebaseReady) return;
+    db.collection('tips').orderBy('createdAt','desc').limit(20).get().then(snap => {
+      snap.forEach(doc => {
+        const d = doc.data();
+        renderTip({ place:d.place, body:d.body, type:d.type, verified:d.verified, by:'synced from cloud' });
+      });
+      refreshStats();
+    }).catch(()=>{});
+  }
+
+  /* ---------------- QR check-in: scan ---------------- */
+  const checkedInPlaces = new Set();
+  const camModal = document.getElementById('camModal');
+  const camVideo = document.getElementById('camVideo');
+  const camStatus = document.getElementById('camStatus');
+  let camStream = null;
+  let scanLoopId = null;
+
+  document.getElementById('scanQrBtn').addEventListener('click', async () => {
+    const t = translations[currentLang];
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      showToast(t.camNotSupported); return;
+    }
+    try {
+      camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      camVideo.srcObject = camStream;
+      camModal.classList.add('show');
+      requestAnimationFrame(scanFrame);
+    } catch(e){
+      showToast(t.camNotSupported);
+    }
+  });
+
+  function scanFrame(){
+    if(!camModal.classList.contains('show')) return;
+    if(camVideo.readyState === camVideo.HAVE_ENOUGH_DATA){
+      const canvas = document.createElement('canvas');
+      canvas.width = camVideo.videoWidth;
+      canvas.height = camVideo.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(camVideo, 0, 0, canvas.width, canvas.height);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const code = jsQR(imageData.data, canvas.width, canvas.height);
+      if(code && code.data && code.data.startsWith('OFFTRAIL_CHECKIN:')){
+        const place = code.data.replace('OFFTRAIL_CHECKIN:', '').trim();
+        handleCheckIn(place);
+        return;
+      }
+    }
+    scanLoopId = requestAnimationFrame(scanFrame);
+  }
+
+  function handleCheckIn(place){
+    const t = translations[currentLang];
+    const key = place.toLowerCase();
+    closeCamModal();
+    if(checkedInPlaces.has(key)){
+      showToast(t.checkinAlready);
+    } else {
+      checkedInPlaces.add(key);
+      showToast(t.checkinSuccess);
+    }
+    document.getElementById('inputPlace').value = place;
+    modal.classList.add('show');
+  }
+
+  function closeCamModal(){
+    camModal.classList.remove('show');
+    if(scanLoopId) cancelAnimationFrame(scanLoopId);
+    if(camStream){ camStream.getTracks().forEach(tr => tr.stop()); camStream = null; }
+  }
+  document.getElementById('camCloseBtn').addEventListener('click', closeCamModal);
+
+  /* ---------------- QR check-in: show demo QR ---------------- */
+  const qrModal = document.getElementById('qrModal');
+  let qrRendered = false;
+  document.getElementById('showQrBtn').addEventListener('click', () => {
+    qrModal.classList.add('show');
+    if(!qrRendered){
+      new QRCode(document.getElementById('qrDisplayBox'), {
+        text: 'OFFTRAIL_CHECKIN:Green Valley Homestay',
+        width: 200, height: 200,
+        colorDark: '#1F2E28', colorLight: '#ffffff'
+      });
+      qrRendered = true;
+    }
+  });
+  document.getElementById('qrCloseBtn').addEventListener('click', () => qrModal.classList.remove('show'));
+
+  /* ---------------- register service worker ---------------- */
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+</script>
+</body>
+</html>
