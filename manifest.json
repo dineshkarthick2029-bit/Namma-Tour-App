@@ -1,0 +1,17 @@
+{
+  "name": "Namma Tour",
+  "short_name": "NammaTour",
+  "description": "Offline-first traveler safety network - tips, alerts and GPS trails pass phone-to-phone by QR code, no internet needed.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d2818",
+  "theme_color": "#0d2818",
+  "categories": ["travel", "safety", "navigation"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
