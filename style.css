@@ -1,0 +1,146 @@
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: system-ui, sans-serif;
+  background: #0d2818;
+  color: #e8f0e9;
+  padding-bottom: 90px;
+  transition: background 0.2s, color 0.2s;
+}
+body[data-theme="light"] {
+  background: #f4f7f4; color: #16210b;
+}
+body[data-theme="light"] header,
+body[data-theme="light"] .segBtn,
+body[data-theme="light"] .tipCard,
+body[data-theme="light"] input,
+body[data-theme="light"] select,
+body[data-theme="light"] textarea,
+body[data-theme="light"] .note,
+body[data-theme="light"] .assistantPanel {
+  background: #ffffff; color: #16210b; border-color: #dbe5dc;
+}
+body[data-theme="light"] .hero p,
+body[data-theme="light"] .tipMeta,
+body[data-theme="light"] .helpHint { color: #5c6b5e; }
+
+header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 16px; border-bottom: 1px solid #1c3c28;
+}
+.brand { display: flex; align-items: center; gap: 12px; }
+.logo {
+  width: 46px; height: 46px; border-radius: 50%; border: 2px solid #d4af37;
+  display: flex; align-items: center; justify-content: center; font-size: 22px;
+}
+.brandTitle { font-weight: 700; font-size: 18px; color: #d4af37; letter-spacing: 0.5px; }
+.status { font-size: 12px; padding: 5px 12px; border-radius: 20px; }
+.status.offline { background: #3a1f1f; color: #f3b9b9; }
+.status.online { background: #163d24; color: #86e3a1; }
+.status::before { content: "● "; }
+
+.hero { padding: 20px 16px 8px; }
+.hero h1 { font-size: 26px; margin: 0 0 10px; }
+.hero p { color: #a9c2ae; font-size: 14px; line-height: 1.5; margin: 0; }
+
+.segment { display: flex; gap: 8px; padding: 16px; overflow-x: auto; }
+.segBtn {
+  flex: 1; padding: 13px 6px; border-radius: 14px; border: 1px solid #2a4a36;
+  background: #12301f; color: #a9c2ae; font-size: 13px; font-weight: 600; white-space: nowrap;
+}
+.segBtn.active { background: #d4af37; color: #16210b; border-color: #d4af37; }
+
+.tab { display: none; padding: 0 16px 16px; }
+.tab.active { display: block; }
+
+.searchBox { margin-bottom: 12px; }
+.chipsRow { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 16px; padding-bottom: 4px; }
+.chip {
+  width: auto; margin: 0; padding: 8px 14px; border-radius: 20px; font-size: 13px;
+  background: #12301f; border: 1px solid #2a4a36; color: #a9c2ae; white-space: nowrap;
+}
+.chip.active { background: #d4af37; color: #16210b; border-color: #d4af37; }
+
+.tipsList { list-style: none; padding: 0; margin: 0; }
+.tipCard {
+  border-left: 3px solid #3a8a5a; background: #12301f; border-radius: 10px;
+  padding: 16px; margin-bottom: 16px;
+}
+.tipCard.warning { border-left-color: #d97757; }
+.tipCard.urgent { border-left-color: #e03131; box-shadow: 0 0 0 1px rgba(224,49,49,0.3); }
+.badge {
+  display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+  padding: 4px 10px; border-radius: 20px; background: #163d24; color: #86e3a1; margin-bottom: 10px;
+}
+.badge.warning { background: #3a1f1f; color: #f3b9b9; }
+.badge.urgent { background: #e03131; color: #fff; }
+.tipCard h3 { margin: 0 0 8px; font-size: 18px; }
+.tipCard p.tipText { color: #cfe0d2; margin: 0 0 10px; line-height: 1.5; }
+body[data-theme="light"] .tipCard p.tipText { color: #333; }
+.tipMeta { color: #7c9a83; font-size: 12px; margin-bottom: 12px; }
+.tipActions { display: flex; gap: 8px; flex-wrap: wrap; }
+.tipActions button {
+  flex: none; background: none; border: 1px solid #2a4a36; color: #cfe0d2;
+  padding: 8px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; width: auto; margin: 0;
+}
+body[data-theme="light"] .tipActions button { color: #16210b; }
+
+.helpHint { color: #7c9a83; font-size: 13px; text-align: center; margin-top: 20px; }
+
+h2 { margin-top: 0; }
+label { display: block; font-size: 13px; color: #a9c2ae; margin: 14px 0 6px; }
+body[data-theme="light"] label { color: #5c6b5e; }
+input, select, textarea {
+  width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #2a4a36;
+  background: #12301f; color: #fff; font-size: 15px;
+}
+button {
+  background: #d4af37; color: #16210b; border: none; padding: 14px 16px;
+  border-radius: 12px; font-size: 15px; font-weight: 700; margin-top: 16px; width: 100%;
+}
+.note { font-size: 13px; color: #a9c2ae; background: #12301f; padding: 12px; border-radius: 10px; }
+#qrOutput, #shareQrOutput { margin-top: 12px; display: flex; justify-content: center; background: #fff; border-radius: 10px; padding: 10px; }
+
+.settingRow {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 0; border-bottom: 1px solid #1c3c28;
+}
+.settingRow button { width: auto; margin: 0; padding: 8px 16px; }
+.aboutBox { margin-top: 24px; padding: 14px; background: #12301f; border-radius: 10px; }
+.aboutBox p { margin: 0 0 8px; color: #cfe0d2; font-size: 13px; line-height: 1.5; }
+.aboutSmall { color: #7c9a83 !important; font-size: 11px !important; }
+
+#micFab {
+  position: fixed; bottom: 24px; right: 20px; width: 62px; height: 62px;
+  border-radius: 50%; font-size: 26px; box-shadow: 0 6px 18px rgba(0,0,0,0.4); margin: 0; z-index: 50;
+}
+.assistantPanel {
+  position: fixed; bottom: 100px; right: 20px; left: 20px; background: #12301f;
+  border: 1px solid #2a4a36; border-radius: 14px; padding: 16px; z-index: 50;
+}
+.assistantPanel.hidden { display: none; }
+#assistantReply { color: #d4af37; font-weight: 600; }
+
+.hidden { display: none !important; }
+.statsRow { display: flex; gap: 10px; margin-bottom: 14px; }
+.statCard {
+  flex: 1; background: #12301f; border: 1px solid #2a4a36; border-radius: 12px;
+  padding: 12px; text-align: center;
+}
+.statNum { font-size: 22px; font-weight: 800; color: #d4af37; }
+.statLabel { font-size: 11px; color: #a9c2ae; margin-top: 2px; }
+body[data-theme="light"] .statCard { background: #fff; }
+
+.onboardingOverlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100;
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+}
+.onboardingOverlay.hidden { display: none; }
+.onboardingCard {
+  background: #12301f; border-radius: 20px; padding: 32px 24px; text-align: center;
+  max-width: 340px; border: 1px solid #2a4a36;
+}
+.obIcon { font-size: 44px; margin-bottom: 14px; }
+.obSlide.hidden { display: none; }
+.onboardingCard h2 { margin: 0 0 12px; color: #d4af37; }
+.onboardingCard p { color: #cfe0d2; line-height: 1.6; font-size: 14px; }
