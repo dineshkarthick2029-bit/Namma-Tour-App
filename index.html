@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Namma Tour</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="style.css">
+<meta name="theme-color" content="#0d2818">
+</head>
+<body>
+
+  <!-- ONBOARDING (first launch only) -->
+  <div id="onboarding" class="onboardingOverlay hidden">
+    <div class="onboardingCard">
+      <div id="obSlide1" class="obSlide">
+        <div class="obIcon">🛡️</div>
+        <h2>Namma Tour</h2>
+        <p>A traveler safety network that works with <b>zero internet</b>. Alerts and tips pass phone-to-phone by QR code.</p>
+      </div>
+      <div id="obSlide2" class="obSlide hidden">
+        <div class="obIcon">🔊</div>
+        <h2>Listen in Tamil</h2>
+        <p>Tap "Read aloud" on any tip to hear it spoken. Tap the 🎙️ button any time to ask the voice assistant a question.</p>
+      </div>
+      <div id="obSlide3" class="obSlide hidden">
+        <div class="obIcon">📤</div>
+        <h2>Share Offline</h2>
+        <p>Show your QR to another traveler — they scan it and instantly get your tips and alerts. No signal needed, ever.</p>
+      </div>
+      <button id="obNextBtn">Next</button>
+    </div>
+  </div>
+
+  <header>
+    <div class="brand">
+      <div class="logo">🛺</div>
+      <div class="brandTitle" data-i18n="appName">Namma Tour</div>
+    </div>
+    <span id="statusDot" class="status offline">Offline</span>
+  </header>
+
+  <div class="hero">
+    <h1 data-i18n="heroTitle">Traveler tips, no signal needed</h1>
+    <p data-i18n="heroDesc">Every note here was left by a traveler and passed phone-to-phone by QR code.</p>
+  </div>
+
+  <div class="segment">
+    <button class="segBtn active" data-tab="tips" data-i18n="tabTips">Tips</button>
+    <button class="segBtn" data-tab="add" data-i18n="tabAdd">Add</button>
+    <button class="segBtn" data-tab="explore" data-i18n="tabExplore">Explore</button>
+    <button class="segBtn" data-tab="sync" data-i18n="tabSync">Sync</button>
+    <button class="segBtn" data-tab="track" data-i18n="tabTrack">Track</button>
+    <button class="segBtn" data-tab="settings" data-i18n="tabSettings">Settings</button>
+  </div>
+
+  <!-- TAB: Tips feed -->
+  <section id="tips" class="tab active">
+    <div id="statsRow" class="statsRow"></div>
+    <input id="searchBox" class="searchBox" data-i18n-placeholder="searchPlaceholder" placeholder="Search place...">
+    <div class="chipsRow">
+      <button class="chip active" data-filter="all" data-i18n="filterAll">All</button>
+      <button class="chip" data-filter="nearby" data-i18n="filterNearby">📍 Nearby</button>
+      <button class="chip" data-filter="urgent" data-i18n="filterUrgent">🚨 Urgent</button>
+      <button class="chip" data-filter="warning" data-i18n="filterWarning">⚠️ Warning</button>
+      <button class="chip" data-filter="recommend" data-i18n="filterRecommend">👍 Recommend</button>
+    </div>
+    <ul id="tipsList" class="tipsList"></ul>
+    <p class="helpHint" data-i18n="helpHint"></p>
+  </section>
+
+  <!-- TAB: Add a tip -->
+  <section id="add" class="tab">
+    <h2 data-i18n="addTitle">Add a Tip</h2>
+    <label data-i18n="addPlaceLabel">Place name</label>
+    <input id="newPlace" data-i18n-placeholder="addPlacePlaceholder" placeholder="e.g. Kolukkumalai viewpoint">
+
+    <label data-i18n="addTypeLabel">Type</label>
+    <select id="newType">
+      <option value="recommend">👍 Recommend</option>
+      <option value="warning">⚠️ Warning</option>
+      <option value="urgent">🚨 Urgent Safety Alert</option>
+    </select>
+
+    <label data-i18n="addTextLabel">Your tip</label>
+    <textarea id="newText" rows="3" data-i18n-placeholder="addTextPlaceholder" placeholder="Write something useful..."></textarea>
+
+    <button id="saveTipBtn" data-i18n="addBtn">Save Tip</button>
+  </section>
+
+  <!-- TAB: Explore (curated places directory) -->
+  <section id="explore" class="tab">
+    <h2 data-i18n="exploreTitle">Explore Tamil Nadu &amp; Kerala</h2>
+    <p class="note" data-i18n="exploreDesc"></p>
+
+    <input id="exploreSearch" class="searchBox" data-i18n-placeholder="exploreSearchPlaceholder" placeholder="Search 300+ places...">
+
+    <div class="chipsRow" id="stateChipsRow">
+      <button class="chip active" data-state="all" data-i18n="stateAll">All States</button>
+      <button class="chip" data-state="Tamil Nadu">Tamil Nadu</button>
+      <button class="chip" data-state="Kerala">Kerala</button>
+    </div>
+    <div class="chipsRow" id="categoryChipsRow">
+      <button class="chip active" data-cat="all" data-i18n="catAll">All</button>
+      <button class="chip" data-cat="temple">🛕 <span data-i18n="catTemple">Temple</span></button>
+      <button class="chip" data-cat="hill">⛰️ <span data-i18n="catHill">Hill</span></button>
+      <button class="chip" data-cat="beach">🏖️ <span data-i18n="catBeach">Beach</span></button>
+      <button class="chip" data-cat="backwater">🚤 <span data-i18n="catBackwater">Backwater</span></button>
+      <button class="chip" data-cat="wildlife">🐘 <span data-i18n="catWildlife">Wildlife</span></button>
+      <button class="chip" data-cat="waterfall">💦 <span data-i18n="catWaterfall">Falls</span></button>
+      <button class="chip" data-cat="heritage">🏰 <span data-i18n="catHeritage">Heritage</span></button>
+      <button class="chip" data-cat="nature">🌿 <span data-i18n="catNature">Nature</span></button>
+      <button class="chip" data-cat="museum">🖼️ <span data-i18n="catMuseum">Museum</span></button>
+    </div>
+
+    <div class="exploreActions">
+      <button id="surpriseBtn" data-i18n="surpriseBtn">🎲 Surprise Me</button>
+      <button id="nearMeBtn" data-i18n="nearMeBtn">📍 Sort by Distance</button>
+    </div>
+
+    <div id="savedPlacesBox" class="savedPlacesBox hidden">
+      <p class="tinyNote" id="savedPlacesLabel"></p>
+      <div id="savedPlacesList"></div>
+    </div>
+
+    <p id="exploreCount" class="tinyNote"></p>
+    <div id="exploreList" class="exploreList"></div>
+  </section>
+
+  <!-- TAB: Sync / Check-in -->
+  <section id="sync" class="tab">
+    <h2 data-i18n="syncTitle">Sync With Another Traveler</h2>
+    <p class="note" data-i18n="syncDesc"></p>
+
+    <button id="showQrBtn" data-i18n="showQrBtn">Show My Tips as QR</button>
+    <div id="qrOutput"></div>
+
+    <button id="scanBtn" data-i18n="scanBtn">Scan a Traveler's QR</button>
+    <div id="qrReader" style="width:100%"></div>
+  </section>
+
+  <!-- TAB: GPS Tracking + SOS -->
+  <section id="track" class="tab">
+    <h2 data-i18n="trackTitle">Offline GPS Tracking</h2>
+    <p class="note" data-i18n="trackDesc"></p>
+
+    <button id="sosBtn" class="sosBtn" data-i18n="sosBtn">🆘 Send SOS - Share My Location</button>
+    <p class="tinyNote" data-i18n="sosNote"></p>
+
+    <div id="trackStats" class="statsRow"></div>
+    <canvas id="trackCanvas" width="320" height="220" class="trackCanvas"></canvas>
+    <p class="tinyNote" id="trackHint" data-i18n="trackHint"></p>
+
+    <button id="trackStartBtn" data-i18n="trackStartBtn">▶️ Start Tracking</button>
+    <button id="trackStopBtn" class="hidden dangerBtn" data-i18n="trackStopBtn">⏹️ Stop &amp; Save Trip</button>
+
+    <div id="tripHistoryList" class="tripHistoryList"></div>
+  </section>
+
+  <!-- TAB: Settings -->
+  <section id="settings" class="tab">
+    <h2 data-i18n="settingsTitle">Settings</h2>
+
+    <div class="settingRow">
+      <span data-i18n="settingsLang">App Language</span>
+      <button id="langToggle">தமிழ்</button>
+    </div>
+
+    <div class="settingRow">
+      <span data-i18n="settingsTheme">Theme</span>
+      <button id="themeToggle" data-i18n="themeDark">Dark</button>
+    </div>
+
+    <label data-i18n="settingsGeminiLabel">Gemini AI Key (optional, for smarter assistant)</label>
+    <input id="geminiKeyInput" placeholder="Paste your free Gemini API key">
+    <button id="saveGeminiBtn" data-i18n="settingsSaveKey">Save Key</button>
+
+    <div class="settingRow">
+      <span data-i18n="settingsBackup">Backup your data</span>
+      <button id="exportBtn" data-i18n="exportBtn">⬇️ Export</button>
+    </div>
+    <div class="settingRow importRow">
+      <span data-i18n="settingsRestore">Restore from file</span>
+      <input type="file" id="importFile" accept="application/json">
+    </div>
+
+    <div class="aboutBox">
+      <p data-i18n="aboutText"></p>
+      <p class="aboutSmall">Namma Tour v1.0 — built fully offline-first, phone-only.</p>
+    </div>
+
+    <button id="installBtn" class="hidden" data-i18n="installBtn">📲 Install App</button>
+  </section>
+
+  <!-- Floating voice assistant button -->
+  <button id="micFab" aria-label="Voice assistant">🎙️</button>
+  <div id="assistantPanel" class="assistantPanel hidden">
+    <p data-i18n="assistantHint"></p>
+    <p id="assistantStatus"></p>
+    <p id="assistantReply"></p>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="i18n.js"></script>
+  <script src="places-data.js"></script>
+  <script src="voice.js"></script>
+  <script src="gemini-assistant.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
