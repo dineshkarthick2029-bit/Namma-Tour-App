@@ -231,16 +231,75 @@ function shareOneTip(index) {
     showTipQr(tip);
   }
 }
+// Only the fields another phone actually needs travel in the QR — trust
+// counters, sync flags, etc. are dropped and rebuilt fresh on arrival.
+// Short keys (p/la/ln/t/x/d) matter here: every byte counts against the
+// QR code's data limit, especially at low error-correction.
+function minimalTip(tip) {
+  return { p: tip.place, la: tip.lat, ln: tip.lng, t: tip.type, x: tip.text, d: tip.date };
+}
+function expandTip(m) {
+  return { place: m.p, lat: m.la, lng: m.ln, type: m.t, text: m.x, date: m.d, helpful: 0, confirms: 0, flags: 0, synced: false };
+}
 function showTipQr(tip) {
-  const data = JSON.stringify({ type: 'tip', tip });
+  const data = JSON.stringify({ type: 'tip', tip: minimalTip(tip) });
   document.querySelector('[data-tab="sync"]').click();
   renderQrOrFallback('qrOutput', data);
 }
 
-// ---------- SHOW ALL TIPS AS QR ----------
+// ---------- SHOW ALL TIPS AS QR (auto-splits into multiple QR codes if
+// the tip list is too big for one — a single QR code can only hold about
+// 1-3KB of text depending on error-correction level, and a full tip list
+// easily exceeds that) ----------
+const QR_CHUNK_BYTE_LIMIT = 700; // safe payload size per QR at low error-correction
+let bulkQrPages = [];
+let bulkQrPageIndex = 0;
+const bulkBatchId = () => 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+function buildBulkPages(tips) {
+  const batchId = bulkBatchId();
+  const minimal = tips.map(minimalTip);
+  const chunks = [];
+  let current = [];
+  for (const tip of minimal) {
+    const trial = [...current, tip];
+    const size = JSON.stringify({ type: 'bulk_tips', batch: batchId, part: 1, total: 1, tips: trial }).length;
+    if (size > QR_CHUNK_BYTE_LIMIT && current.length) {
+      chunks.push(current);
+      current = [tip];
+    } else {
+      current.push(tip);
+    }
+  }
+  if (current.length) chunks.push(current);
+  return chunks.map((tipsChunk, i) => JSON.stringify({
+    type: 'bulk_tips', batch: batchId, part: i + 1, total: chunks.length, tips: tipsChunk,
+  }));
+}
+
+function renderBulkQrPage() {
+  const out = document.getElementById('qrOutput');
+  renderQrOrFallback('qrOutput', bulkQrPages[bulkQrPageIndex]);
+  const nav = document.getElementById('qrPageNav');
+  if (bulkQrPages.length > 1) {
+    nav.classList.remove('hidden');
+    nav.querySelector('.qrPageLabel').textContent =
+      (getLang() === 'ta' ? 'பகுதி ' : 'Part ') + (bulkQrPageIndex + 1) + ' / ' + bulkQrPages.length;
+  } else {
+    nav.classList.add('hidden');
+  }
+}
+
 document.getElementById('showQrBtn').addEventListener('click', () => {
-  const data = JSON.stringify({ type: 'bulk_tips', tips: getTips() });
-  renderQrOrFallback('qrOutput', data);
+  bulkQrPages = buildBulkPages(getTips());
+  bulkQrPageIndex = 0;
+  renderBulkQrPage();
+});
+document.getElementById('qrPrevBtn')?.addEventListener('click', () => {
+  if (bulkQrPageIndex > 0) { bulkQrPageIndex--; renderBulkQrPage(); }
+});
+document.getElementById('qrNextBtn')?.addEventListener('click', () => {
+  if (bulkQrPageIndex < bulkQrPages.length - 1) { bulkQrPageIndex++; renderBulkQrPage(); }
 });
 
 // Renders a real QR code when the qrcode.min.js library (bundled locally —
@@ -251,7 +310,7 @@ function renderQrOrFallback(containerId, data) {
   out.innerHTML = '';
   try {
     if (typeof QRCode === 'undefined') throw new Error('QRCode library not loaded');
-    new QRCode(out, { text: data, width: 220, height: 220 });
+    new QRCode(out, { text: data, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.L });
   } catch (err) {
     console.warn('QR generation failed, showing text fallback:', err);
     out.innerHTML = `
@@ -284,21 +343,44 @@ document.getElementById('scanBtn').addEventListener('click', () => {
     scanner = null;
   });
 });
+// Holds partially-scanned multi-part bulk QR batches until every part has
+// been scanned (each part is scanned as a separate QR code, one at a time).
+let pendingBulkBatches = {};
+
 function handleScannedData(text) {
   try {
     const data = JSON.parse(text);
     const list = getTips();
     // Confirms/flags are this app's trust signal — never accept a sender's
     // claimed counts at face value, or a crafted QR could fake "verified".
-    const resetTrust = (tip) => ({ ...tip, confirms: 0, flags: 0, lastConfirmed: undefined, synced: false });
+    const resetTrust = (tip) => ({ ...expandTip(tip), confirms: 0, flags: 0, lastConfirmed: undefined, synced: false });
     if (data.type === 'tip') {
       list.push(resetTrust(data.tip));
       saveTips(list);
-      alert('Received 1 tip: ' + data.tip.place);
+      alert('Received 1 tip: ' + (data.tip.p || data.tip.place));
     } else if (data.type === 'bulk_tips') {
-      data.tips.forEach(tip => list.push(resetTrust(tip)));
-      saveTips(list);
-      alert('Received ' + data.tips.length + ' tips');
+      if (data.total && data.total > 1) {
+        // Multi-part batch: accumulate until every part has been scanned
+        const batch = pendingBulkBatches[data.batch] || { parts: {}, total: data.total };
+        batch.parts[data.part] = data.tips;
+        pendingBulkBatches[data.batch] = batch;
+        const receivedCount = Object.keys(batch.parts).length;
+        if (receivedCount < data.total) {
+          alert((getLang() === 'ta' ? 'பகுதி ' : 'Part ') + data.part + '/' + data.total +
+            (getLang() === 'ta' ? ' பெறப்பட்டது. மீதமுள்ள QR குறியீடுகளை ஸ்கேன் செய்யவும்.' : ' received. Scan the remaining QR codes to finish.'));
+        } else {
+          let allTips = [];
+          for (let p = 1; p <= data.total; p++) allTips = allTips.concat(batch.parts[p] || []);
+          allTips.forEach(tip => list.push(resetTrust(tip)));
+          saveTips(list);
+          delete pendingBulkBatches[data.batch];
+          alert('Received ' + allTips.length + ' tips (all ' + data.total + ' parts)');
+        }
+      } else {
+        data.tips.forEach(tip => list.push(resetTrust(tip)));
+        saveTips(list);
+        alert('Received ' + data.tips.length + ' tips');
+      }
     }
     document.querySelector('[data-tab="tips"]').click();
     autoBackupToCloud();
