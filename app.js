@@ -87,8 +87,8 @@ function saveTips(list) { localStorage.setItem('tips', JSON.stringify(list)); re
 // Anyone can currently mark a tip "urgent" with no check — this computes a
 // simple community-verification signal from confirm/flag counts so a single
 // unverified or disputed report doesn't dominate the feed forever.
-const CONFIRM_THRESHOLD = 2;   // confirms needed to show as "Verified"
-const FLAG_DISPUTE_THRESHOLD = 2; // flags needed (and outnumbering confirms) to mark disputed
+const CONFIRM_THRESHOLD = 4;   // confirms needed to show as "Verified" — raised from 2 so a single person with 2 phones can't instantly self-verify
+const FLAG_DISPUTE_THRESHOLD = 4; // flags needed (and outnumbering confirms) to mark disputed — same reasoning
 const URGENT_EXPIRY_DAYS = 21; // urgent alerts older than this with no confirmations get downgraded
 
 function getTipTrust(tip) {
