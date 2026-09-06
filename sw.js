@@ -1,4 +1,4 @@
-const CACHE_NAME = 'namma-tour-v13';
+const CACHE_NAME = 'namma-tour-v14'; // bumped so existing installs pick up the Firebase fix
 const FILES_TO_CACHE = [
   './',
   './index.html',
@@ -14,7 +14,9 @@ const FILES_TO_CACHE = [
   './icon-192.png',
   './icon-512.png',
   './qrcode.min.js',
-  'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js'
+  'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js',
+  'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js',
+  'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js'
 ];
 
 self.addEventListener('install', (event) => {
