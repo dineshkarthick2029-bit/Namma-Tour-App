@@ -154,8 +154,8 @@ function renderTips() {
     return `
     <li class="tipCard ${tip.type}${cardExtraClass}">
       <span class="badge ${tip.type}">${badgeText[tip.type]}</span>
-      <h3>${tip.place}</h3>
-      <p class="tipText">${tip.text}</p>
+      <h3>${escapeHtml(tip.place)}</h3>
+      <p class="tipText">${escapeHtml(tip.text)}</p>
       <div class="tipMeta">${formatDate(tip.date)} · ${t('leftBy')} ${dist ? '· 📍 ' + dist : ''}</div>
       ${trustNote}
       <div class="tipActions">
@@ -169,7 +169,26 @@ function renderTips() {
   }).join('') || `<p class="helpHint">${getLang() === 'ta' ? 'எதுவும் கிடைக்கவில்லை' : 'No tips match.'}</p>`;
   renderStats();
 }
-function escapeJs(str) { return str.replace(/'/g, "\\'"); }
+// Escapes text for safe insertion as HTML content (prevents a tip's place
+// name or text from being interpreted as markup/script by another phone
+// that receives it via QR share).
+function escapeHtml(str) {
+  return String(str ?? '').replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+// Escapes text for safe insertion inside a single-quoted JS string literal
+// that itself sits inside a double-quoted HTML onclick="..." attribute.
+// Must neutralize backslashes/quotes (JS breakout) AND angle brackets/double
+// quotes (HTML attribute breakout) since both contexts are nested here.
+function escapeJs(str) {
+  return String(str ?? '')
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
 function formatDate(d) { return new Date(d).toLocaleDateString('en-GB'); }
 
 // ---------- HELPFUL / CONFIRM / FLAG COUNTERS ----------
@@ -895,8 +914,8 @@ function placeCardHtml(p) {
   return `
     <li class="tipCard placeCard" id="place-${p.id}">
       <span class="badge place">${CATEGORY_EMOJI[p.category] || '📍'} ${p.district}, ${p.state}</span>
-      <h3>${p.place}</h3>
-      <p class="tipText">${p.text}</p>
+      <h3>${escapeHtml(p.place)}</h3>
+      <p class="tipText">${escapeHtml(p.text)}</p>
       <div class="tipMeta">${getLang() === 'ta' ? 'சிறந்த நேரம்' : 'Best time'}: ${p.best}${dist ? ' · 📍 ' + dist : ''}</div>
       <div class="tipActions">
         <button onclick="speak('${escapeJs(p.place)}. ${escapeJs(p.text)}')">🔊 ${t('readAloud')}</button>
@@ -930,7 +949,7 @@ function renderSavedPlacesBox() {
   box.classList.remove('hidden');
   const savedPlaces = curatedPlaces.filter(p => savedIds.includes(p.id));
   labelEl.textContent = getLang() === 'ta' ? `📝 என் பயண பட்டியல் (${savedPlaces.length})` : `📝 My Trip List (${savedPlaces.length})`;
-  listEl.innerHTML = savedPlaces.map(p => `<span class="savedChip">${p.place} <a href="#" onclick="toggleSavedPlace('${p.id}');return false;">✕</a></span>`).join('');
+  listEl.innerHTML = savedPlaces.map(p => `<span class="savedChip">${escapeHtml(p.place)} <a href="#" onclick="toggleSavedPlace('${p.id}');return false;">✕</a></span>`).join('');
 }
 
 document.getElementById('exploreSearch')?.addEventListener('input', (e) => { exploreSearch = e.target.value; renderExplore(); });
