@@ -1,0 +1,51 @@
+rules_version = '2';
+
+// Namma Tour — Firestore security rules.
+//
+// HOW TO USE: Firebase Console → Build → Firestore Database → Rules tab →
+// replace everything there with this file's contents → Publish.
+//
+// This app has no login system by design (works with zero setup), so these
+// rules can't check "is this really you" the way a normal app would — they
+// can only check that the DATA being written looks like a real tip/backup
+// and isn't someone dumping garbage or trying to overwrite other people's
+// data in ways the app itself would never do.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- tips ----------
+    // Public community feed: anyone can read (so tips spread), anyone can
+    // add a NEW tip (no login = no way to restrict who posts), but nobody
+    // can modify or delete a tip once it exists — the app itself only ever
+    // calls .add(), never .update()/.delete() on this collection, so
+    // blocking those outright closes off tampering with other people's tips.
+    match /tips/{tipId} {
+      allow read: true;
+      allow create: if request.resource.data.keys().hasAll(['place', 'text', 'type', 'date'])
+                    && request.resource.data.place is string && request.resource.data.place.size() < 200
+                    && request.resource.data.text is string && request.resource.data.text.size() < 2000
+                    && request.resource.data.type in ['recommend', 'warning', 'urgent'];
+      allow update, delete: if false;
+    }
+
+    // ---------- backups ----------
+    // Each doc ID IS the user's backup code (e.g. "NT-XXXX-XXXX") — this is
+    // the app's only stand-in for an account. Knowing the code is the only
+    // "credential" that exists, so anyone with it can read/overwrite that
+    // one document — same trust model as the app already uses. What these
+    // rules DO add: nobody can list/enumerate every backup in the
+    // collection (only a direct doc-ID lookup works), and a write must at
+    // least look like real backup data, not arbitrary payloads.
+    match /backups/{backupId} {
+      allow get: true;
+      allow list: if false;
+      allow write: if request.resource.data.keys().hasAny(['tips', 'trackHistory', 'savedPlaceIds', 'updatedAt']);
+    }
+
+    // Everything else stays closed.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
