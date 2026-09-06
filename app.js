@@ -251,7 +251,11 @@ function showTipQr(tip) {
 // the tip list is too big for one — a single QR code can only hold about
 // 1-3KB of text depending on error-correction level, and a full tip list
 // easily exceeds that) ----------
-const QR_CHUNK_BYTE_LIMIT = 700; // safe payload size per QR at low error-correction
+// Measured against the percent-ENCODED size (what actually reaches the QR
+// library), since encoding expands text with special characters (em-dashes,
+// Tamil script, etc.) by roughly 1.5-3x — sizing against the raw JSON
+// length would under-count and risk overflow again.
+const QR_CHUNK_BYTE_LIMIT = 900;
 let bulkQrPages = [];
 let bulkQrPageIndex = 0;
 const bulkBatchId = () => 'b' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
@@ -263,7 +267,7 @@ function buildBulkPages(tips) {
   let current = [];
   for (const tip of minimal) {
     const trial = [...current, tip];
-    const size = JSON.stringify({ type: 'bulk_tips', batch: batchId, part: 1, total: 1, tips: trial }).length;
+    const size = encodeURIComponent(JSON.stringify({ type: 'bulk_tips', batch: batchId, part: 1, total: 1, tips: trial })).length;
     if (size > QR_CHUNK_BYTE_LIMIT && current.length) {
       chunks.push(current);
       current = [tip];
@@ -305,12 +309,25 @@ document.getElementById('qrNextBtn')?.addEventListener('click', () => {
 // Renders a real QR code when the qrcode.min.js library (bundled locally —
 // no CDN needed) is available; otherwise falls back to a copyable text box
 // so a tip can still be shared with zero QR library loaded at all.
+// Renders a real QR code when the qrcode.min.js library (bundled locally —
+// no CDN needed) is available; otherwise falls back to a copyable text box.
+//
+// IMPORTANT: the payload is percent-encoded (encodeURIComponent) before
+// being handed to the QR library. This exact library estimates how big a
+// QR grid it needs using a rough byte-length guess that breaks on
+// non-ASCII characters (em-dashes, curly quotes, ₹, Tamil script, emoji)
+// — confirmed by testing: it throws "code length overflow" on as little
+// as 461 bytes of text purely because of a few em-dashes in it, while the
+// exact same text with plain hyphens encodes fine. Percent-encoding first
+// makes the string pure ASCII, so the library's guess is always exactly
+// right — this fixes it for Tamil-language tips too, not just English.
 function renderQrOrFallback(containerId, data) {
   const out = document.getElementById(containerId);
   out.innerHTML = '';
   try {
     if (typeof QRCode === 'undefined') throw new Error('QRCode library not loaded');
-    new QRCode(out, { text: data, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.L });
+    const safeData = encodeURIComponent(data);
+    new QRCode(out, { text: safeData, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.L });
   } catch (err) {
     console.warn('QR generation failed, showing text fallback:', err);
     out.innerHTML = `
@@ -349,7 +366,10 @@ let pendingBulkBatches = {};
 
 function handleScannedData(text) {
   try {
-    const data = JSON.parse(text);
+    // QR-scanned text is percent-encoded (see renderQrOrFallback); the
+    // copy-paste fallback text is plain JSON with no % sequences, so
+    // decodeURIComponent safely passes it through unchanged either way.
+    const data = JSON.parse(decodeURIComponent(text));
     const list = getTips();
     // Confirms/flags are this app's trust signal — never accept a sender's
     // claimed counts at face value, or a crafted QR could fake "verified".
