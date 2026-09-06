@@ -229,6 +229,11 @@
   <script src="places-data.js"></script>
   <script src="voice.js"></script>
   <script src="gemini-assistant.js"></script>
+  <!-- Firebase SDKs — must load BEFORE firebase-config.js, or
+       firebase-config.js throws "firebase is not defined" and cloud
+       backup silently breaks (this was the bug from the last review). -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
   <script src="app.js"></script>
 </body>
