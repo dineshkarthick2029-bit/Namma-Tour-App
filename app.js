@@ -30,6 +30,19 @@ function renderStats() {
 }
 
 // ---------- SEED DATA ----------
+function genTipId() { return 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+// A persistent per-install ID (not tied to any identity — just this app
+// install on this phone). Used only to stop a tip's own author from
+// confirming or flagging their own tip; it does NOT and cannot detect the
+// same person using a second phone or reinstalling the app. That
+// limitation is fundamental to having no accounts and no server.
+function myDeviceId() {
+  let id = localStorage.getItem('deviceId');
+  if (!id) { id = 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 9); localStorage.setItem('deviceId', id); }
+  return id;
+}
+
 function getTips() {
   let tips = JSON.parse(localStorage.getItem('tips') || 'null');
   if (!tips) {
@@ -49,7 +62,24 @@ function getTips() {
     ];
     localStorage.setItem('tips', JSON.stringify(tips));
   }
+  // Backfill: tips created before IDs existed (or received from an older
+  // QR payload) get one assigned now, so voting can still be tracked.
+  let changed = false;
+  tips.forEach(tip => { if (!tip.id) { tip.id = genTipId(); changed = true; } });
+  if (changed) localStorage.setItem('tips', JSON.stringify(tips));
   return tips;
+}
+
+// ---------- SPAM / FAKE-VERIFICATION GUARDS ----------
+// One confirm and one flag per tip, per device — stops a single person
+// (or a bad-faith sender) from mashing the button to fake "verified"
+// status or bury a real warning under false flags.
+function getVoted(kind) { return JSON.parse(localStorage.getItem('voted_' + kind) || '[]'); }
+function hasVoted(kind, tipId) { return getVoted(kind).includes(tipId); }
+function recordVote(kind, tipId) {
+  const voted = getVoted(kind);
+  voted.push(tipId);
+  localStorage.setItem('voted_' + kind, JSON.stringify(voted));
 }
 function saveTips(list) { localStorage.setItem('tips', JSON.stringify(list)); renderTips(); autoBackupToCloud(); }
 
@@ -115,7 +145,12 @@ function renderTips() {
       cardExtraClass = ' expired-urgent';
     } else if (trust.verified) {
       trustNote = `<div class="trustNote verified">✅ ${ta ? `${trust.confirms} பயணிகளால் உறுதிப்படுத்தப்பட்டது` : `Verified by ${trust.confirms} travelers`}</div>`;
+    } else {
+      trustNote = `<div class="trustNote unverified">🆕 ${ta ? 'இன்னும் உறுதிப்படுத்தப்படவில்லை — கவனமாக பயன்படுத்தவும்' : 'Not yet verified by other travelers — use your judgment'}</div>`;
     }
+    const isOwnTip = tip.authorDeviceId && tip.authorDeviceId === myDeviceId();
+    const confirmVoted = isOwnTip || hasVoted('confirm', tip.id);
+    const flagVoted = isOwnTip || hasVoted('flag', tip.id);
     return `
     <li class="tipCard ${tip.type}${cardExtraClass}">
       <span class="badge ${tip.type}">${badgeText[tip.type]}</span>
@@ -127,8 +162,8 @@ function renderTips() {
         <button onclick="speak('${escapeJs(tip.place)}. ${escapeJs(tip.text)}')">🔊 ${t('readAloud')}</button>
         <button onclick="shareOneTip(${realIndex})">📤 ${t('shareThis')}</button>
         <button onclick="markHelpful(${realIndex})">👍 ${tip.helpful || 0}</button>
-        <button onclick="markConfirm(${realIndex})" title="${ta ? 'இது இன்னும் உண்மையா?' : 'Confirm this is still accurate'}">✅ ${trust.confirms}</button>
-        <button onclick="markFlag(${realIndex})" title="${ta ? 'தவறானது என புகார்' : 'Report as inaccurate'}">🚩 ${trust.flags}</button>
+        <button onclick="markConfirm(${realIndex})" ${confirmVoted ? 'disabled' : ''} title="${isOwnTip ? (ta ? 'உங்கள் சொந்த குறிப்பு' : "This is your own tip") : confirmVoted ? (ta ? 'ஏற்கனவே உறுதிப்படுத்தினீர்கள்' : 'You already confirmed this') : (ta ? 'இது இன்னும் உண்மையா?' : 'Confirm this is still accurate')}">✅ ${trust.confirms}</button>
+        <button onclick="markFlag(${realIndex})" ${flagVoted ? 'disabled' : ''} title="${isOwnTip ? (ta ? 'உங்கள் சொந்த குறிப்பு' : "This is your own tip") : flagVoted ? (ta ? 'ஏற்கனவே புகார் செய்தீர்கள்' : 'You already reported this') : (ta ? 'தவறானது என புகார்' : 'Report as inaccurate')}">🚩 ${trust.flags}</button>
       </div>
     </li>`;
   }).join('') || `<p class="helpHint">${getLang() === 'ta' ? 'எதுவும் கிடைக்கவில்லை' : 'No tips match.'}</p>`;
@@ -145,14 +180,28 @@ function markHelpful(index) {
 }
 function markConfirm(index) {
   const list = getTips();
-  list[index].confirms = (list[index].confirms || 0) + 1;
-  list[index].lastConfirmed = new Date().toISOString().slice(0, 10);
+  const tip = list[index];
+  if (tip.authorDeviceId && tip.authorDeviceId === myDeviceId()) {
+    alert(getLang() === 'ta' ? 'உங்கள் சொந்த குறிப்பை நீங்கள் உறுதிப்படுத்த முடியாது.' : "You can't confirm your own tip.");
+    return;
+  }
+  if (hasVoted('confirm', tip.id)) return; // one confirm per tip per device
+  tip.confirms = (tip.confirms || 0) + 1;
+  tip.lastConfirmed = new Date().toISOString().slice(0, 10);
+  recordVote('confirm', tip.id);
   saveTips(list);
   autoBackupToCloud();
 }
 function markFlag(index) {
   const list = getTips();
-  list[index].flags = (list[index].flags || 0) + 1;
+  const tip = list[index];
+  if (tip.authorDeviceId && tip.authorDeviceId === myDeviceId()) {
+    alert(getLang() === 'ta' ? 'உங்கள் சொந்த குறிப்பை நீங்கள் புகார் செய்ய முடியாது.' : "You can't report your own tip.");
+    return;
+  }
+  if (hasVoted('flag', tip.id)) return; // one flag per tip per device
+  tip.flags = (tip.flags || 0) + 1;
+  recordVote('flag', tip.id);
   saveTips(list);
   autoBackupToCloud();
 }
@@ -212,9 +261,26 @@ document.getElementById('saveTipBtn').addEventListener('click', () => {
   const text = document.getElementById('newText').value.trim();
   const type = document.getElementById('newType').value;
   if (!place || !text) return;
+
+  // Basic spam/junk guards: a real tip needs a little substance, and a
+  // device can't machine-gun-post tips faster than a human realistically
+  // would (both are easy for a script to fake, but this stops casual
+  // spam/accidental double-taps without adding friction for real use).
+  if (text.length < 8) {
+    alert(getLang() === 'ta' ? 'குறிப்பு மிகவும் குறுகியது — கொஞ்சம் விவரம் சேர்க்கவும்.' : 'That tip is too short — add a bit more detail so it\'s actually useful.');
+    return;
+  }
+  const lastAdd = Number(localStorage.getItem('lastTipAddTime') || 0);
+  const cooldownMs = 15000;
+  if (Date.now() - lastAdd < cooldownMs) {
+    alert(getLang() === 'ta' ? 'மிக வேகமாக சேர்க்கிறீர்கள் — சிறிது காத்திருந்து மீண்டும் முயற்சிக்கவும்.' : 'Slow down a little before adding another tip.');
+    return;
+  }
+
   const list = getTips();
-  list.push({ place, type, text, date: new Date().toISOString().slice(0,10), helpful: 0, confirms: 0, flags: 0, synced: false });
+  list.push({ id: genTipId(), place, type, text, date: new Date().toISOString().slice(0,10), helpful: 0, confirms: 0, flags: 0, synced: false, authorDeviceId: myDeviceId() });
   saveTips(list);
+  localStorage.setItem('lastTipAddTime', String(Date.now()));
   document.getElementById('newPlace').value = '';
   document.getElementById('newText').value = '';
   alert(t('addedMsg'));
@@ -236,10 +302,10 @@ function shareOneTip(index) {
 // Short keys (p/la/ln/t/x/d) matter here: every byte counts against the
 // QR code's data limit, especially at low error-correction.
 function minimalTip(tip) {
-  return { p: tip.place, la: tip.lat, ln: tip.lng, t: tip.type, x: tip.text, d: tip.date };
+  return { p: tip.place, la: tip.lat, ln: tip.lng, t: tip.type, x: tip.text, d: tip.date, a: tip.authorDeviceId };
 }
 function expandTip(m) {
-  return { place: m.p, lat: m.la, lng: m.ln, type: m.t, text: m.x, date: m.d, helpful: 0, confirms: 0, flags: 0, synced: false };
+  return { place: m.p, lat: m.la, lng: m.ln, type: m.t, text: m.x, date: m.d, helpful: 0, confirms: 0, flags: 0, synced: false, authorDeviceId: m.a };
 }
 function showTipQr(tip) {
   const data = JSON.stringify({ type: 'tip', tip: minimalTip(tip) });
@@ -373,7 +439,7 @@ function handleScannedData(text) {
     const list = getTips();
     // Confirms/flags are this app's trust signal — never accept a sender's
     // claimed counts at face value, or a crafted QR could fake "verified".
-    const resetTrust = (tip) => ({ ...expandTip(tip), confirms: 0, flags: 0, lastConfirmed: undefined, synced: false });
+    const resetTrust = (tip) => ({ ...expandTip(tip), id: genTipId(), confirms: 0, flags: 0, lastConfirmed: undefined, synced: false });
     if (data.type === 'tip') {
       list.push(resetTrust(data.tip));
       saveTips(list);
