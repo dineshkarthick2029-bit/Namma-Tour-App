@@ -185,6 +185,12 @@
     <input id="geminiKeyInput" placeholder="Paste your free Gemini API key">
     <button id="saveGeminiBtn" data-i18n="settingsSaveKey">Save Key</button>
 
+    <div id="exportReminderBanner" class="exportReminder hidden">
+      <span data-i18n="exportReminderText">It's been a while since your last backup — export a copy in case you switch phones or clear browser data.</span>
+      <button id="exportReminderBtn" data-i18n="exportReminderBtn">⬇️ Export now</button>
+      <button id="exportReminderDismiss" data-i18n="exportReminderDismiss">Later</button>
+    </div>
+
     <div class="settingRow">
       <span data-i18n="settingsBackup">Backup your data</span>
       <button id="exportBtn" data-i18n="exportBtn">⬇️ Export</button>
@@ -237,5 +243,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
   <script src="app.js"></script>
+  <div id="toastContainer" aria-live="polite"></div>
 </body>
 </html>
