@@ -189,6 +189,23 @@ function escapeJs(str) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
 }
+
+// ---------- TOAST NOTIFICATIONS (replaces alert() everywhere) ----------
+// alert() blocks the whole page and looks jarring on mobile. This shows a
+// small auto-dismissing banner instead. type: 'info' (default), 'success',
+// 'error', or 'warn' — controls the color only.
+function toast(message, type) {
+  const container = document.getElementById('toastContainer');
+  if (!container) { console.warn('Toast:', message); return; } // safety net if container missing
+  const el = document.createElement('div');
+  el.className = 'toast' + (type ? ' ' + type : '');
+  el.textContent = message;
+  container.appendChild(el);
+  setTimeout(() => {
+    el.classList.add('leaving');
+    setTimeout(() => el.remove(), 220);
+  }, 3200);
+}
 function formatDate(d) { return new Date(d).toLocaleDateString('en-GB'); }
 
 // ---------- HELPFUL / CONFIRM / FLAG COUNTERS ----------
@@ -201,7 +218,7 @@ function markConfirm(index) {
   const list = getTips();
   const tip = list[index];
   if (tip.authorDeviceId && tip.authorDeviceId === myDeviceId()) {
-    alert(getLang() === 'ta' ? 'உங்கள் சொந்த குறிப்பை நீங்கள் உறுதிப்படுத்த முடியாது.' : "You can't confirm your own tip.");
+    toast(getLang() === 'ta' ? 'உங்கள் சொந்த குறிப்பை நீங்கள் உறுதிப்படுத்த முடியாது.' : "You can't confirm your own tip.", 'warn');
     return;
   }
   if (hasVoted('confirm', tip.id)) return; // one confirm per tip per device
@@ -215,7 +232,7 @@ function markFlag(index) {
   const list = getTips();
   const tip = list[index];
   if (tip.authorDeviceId && tip.authorDeviceId === myDeviceId()) {
-    alert(getLang() === 'ta' ? 'உங்கள் சொந்த குறிப்பை நீங்கள் புகார் செய்ய முடியாது.' : "You can't report your own tip.");
+    toast(getLang() === 'ta' ? 'உங்கள் சொந்த குறிப்பை நீங்கள் புகார் செய்ய முடியாது.' : "You can't report your own tip.", 'warn');
     return;
   }
   if (hasVoted('flag', tip.id)) return; // one flag per tip per device
@@ -271,7 +288,7 @@ document.getElementById('themeToggle').addEventListener('click', () => {
 document.getElementById('geminiKeyInput').value = localStorage.getItem('geminiKey') || '';
 document.getElementById('saveGeminiBtn').addEventListener('click', () => {
   const key = document.getElementById('geminiKeyInput').value.trim();
-  if (key) { localStorage.setItem('geminiKey', key); alert(t('geminiSaved')); }
+  if (key) { localStorage.setItem('geminiKey', key); toast(t('geminiSaved'), 'success'); }
 });
 
 // ---------- ADD A TIP ----------
@@ -286,13 +303,13 @@ document.getElementById('saveTipBtn').addEventListener('click', () => {
   // would (both are easy for a script to fake, but this stops casual
   // spam/accidental double-taps without adding friction for real use).
   if (text.length < 8) {
-    alert(getLang() === 'ta' ? 'குறிப்பு மிகவும் குறுகியது — கொஞ்சம் விவரம் சேர்க்கவும்.' : 'That tip is too short — add a bit more detail so it\'s actually useful.');
+    toast(getLang() === 'ta' ? 'குறிப்பு மிகவும் குறுகியது — கொஞ்சம் விவரம் சேர்க்கவும்.' : 'That tip is too short — add a bit more detail so it\'s actually useful.', 'warn');
     return;
   }
   const lastAdd = Number(localStorage.getItem('lastTipAddTime') || 0);
   const cooldownMs = 15000;
   if (Date.now() - lastAdd < cooldownMs) {
-    alert(getLang() === 'ta' ? 'மிக வேகமாக சேர்க்கிறீர்கள் — சிறிது காத்திருந்து மீண்டும் முயற்சிக்கவும்.' : 'Slow down a little before adding another tip.');
+    toast(getLang() === 'ta' ? 'மிக வேகமாக சேர்க்கிறீர்கள் — சிறிது காத்திருந்து மீண்டும் முயற்சிக்கவும்.' : 'Slow down a little before adding another tip.', 'warn');
     return;
   }
 
@@ -302,7 +319,7 @@ document.getElementById('saveTipBtn').addEventListener('click', () => {
   localStorage.setItem('lastTipAddTime', String(Date.now()));
   document.getElementById('newPlace').value = '';
   document.getElementById('newText').value = '';
-  alert(t('addedMsg'));
+  toast(t('addedMsg'), 'success');
   document.querySelector('[data-tab="tips"]').click();
 });
 
@@ -419,7 +436,7 @@ function renderQrOrFallback(containerId, data) {
       <div class="qrFallback">
         <p class="tinyNote">${getLang() === 'ta' ? 'QR உருவாக்க முடியவில்லை. இந்த குறியீட்டை நகலெடுத்து அனுப்பவும்:' : "Couldn't generate a QR code. Copy and send this code instead:"}</p>
         <textarea readonly class="qrFallbackText" onclick="this.select()">${data}</textarea>
-        <button onclick="navigator.clipboard.writeText(this.previousElementSibling.value).then(()=>alert('${getLang() === 'ta' ? 'நகலெடுக்கப்பட்டது!' : 'Copied!'}'))">📋 ${getLang() === 'ta' ? 'நகலெடு' : 'Copy'}</button>
+        <button onclick="navigator.clipboard.writeText(this.previousElementSibling.value).then(()=>toast('${getLang() === 'ta' ? 'நகலெடுக்கப்பட்டது!' : 'Copied!'}','success'))">📋 ${getLang() === 'ta' ? 'நகலெடு' : 'Copy'}</button>
       </div>`;
   }
 }
@@ -429,9 +446,9 @@ let scanner = null;
 document.getElementById('scanBtn').addEventListener('click', () => {
   if (scanner) return;
   if (typeof Html5Qrcode === 'undefined') {
-    alert(getLang() === 'ta'
+    toast(getLang() === 'ta'
       ? 'கேமரா ஸ்கேனர் இன்னும் பதிவிறக்கப்படவில்லை. இணையத்துடன் ஒருமுறை பயன்பாட்டைத் திறந்து மீண்டும் முயற்சிக்கவும், அல்லது QR அனுப்பியவரிடம் "Share" வழியை பயன்படுத்தச் சொல்லுங்கள்.'
-      : "The camera scanner hasn't finished downloading yet (it needs internet the very first time). Try again after a moment on Wi-Fi/data, or ask the sender to use the Share option instead.");
+      : "The camera scanner hasn't finished downloading yet (it needs internet the very first time). Try again after a moment on Wi-Fi/data, or ask the sender to use the Share option instead.", 'warn');
     return;
   }
   scanner = new Html5Qrcode('qrReader');
@@ -441,7 +458,7 @@ document.getElementById('scanBtn').addEventListener('click', () => {
     () => {}
   ).catch((err) => {
     console.warn('Camera scanner failed to start:', err);
-    alert(getLang() === 'ta' ? 'கேமராவைத் திறக்க முடியவில்லை. அனுமதி வழங்கப்பட்டதா எனச் சரிபார்க்கவும்.' : 'Could not open the camera. Check that camera permission is allowed for this app.');
+    toast(getLang() === 'ta' ? 'கேமராவைத் திறக்க முடியவில்லை. அனுமதி வழங்கப்பட்டதா எனச் சரிபார்க்கவும்.' : 'Could not open the camera. Check that camera permission is allowed for this app.', 'error');
     scanner = null;
   });
 });
@@ -462,7 +479,7 @@ function handleScannedData(text) {
     if (data.type === 'tip') {
       list.push(resetTrust(data.tip));
       saveTips(list);
-      alert('Received 1 tip: ' + (data.tip.p || data.tip.place));
+      toast('Received 1 tip: ' + (data.tip.p || data.tip.place), 'success');
     } else if (data.type === 'bulk_tips') {
       if (data.total && data.total > 1) {
         // Multi-part batch: accumulate until every part has been scanned
@@ -471,25 +488,25 @@ function handleScannedData(text) {
         pendingBulkBatches[data.batch] = batch;
         const receivedCount = Object.keys(batch.parts).length;
         if (receivedCount < data.total) {
-          alert((getLang() === 'ta' ? 'பகுதி ' : 'Part ') + data.part + '/' + data.total +
-            (getLang() === 'ta' ? ' பெறப்பட்டது. மீதமுள்ள QR குறியீடுகளை ஸ்கேன் செய்யவும்.' : ' received. Scan the remaining QR codes to finish.'));
+          toast((getLang() === 'ta' ? 'பகுதி ' : 'Part ') + data.part + '/' + data.total +
+            (getLang() === 'ta' ? ' பெறப்பட்டது. மீதமுள்ள QR குறியீடுகளை ஸ்கேன் செய்யவும்.' : ' received. Scan the remaining QR codes to finish.'), 'info');
         } else {
           let allTips = [];
           for (let p = 1; p <= data.total; p++) allTips = allTips.concat(batch.parts[p] || []);
           allTips.forEach(tip => list.push(resetTrust(tip)));
           saveTips(list);
           delete pendingBulkBatches[data.batch];
-          alert('Received ' + allTips.length + ' tips (all ' + data.total + ' parts)');
+          toast('Received ' + allTips.length + ' tips (all ' + data.total + ' parts)', 'success');
         }
       } else {
         data.tips.forEach(tip => list.push(resetTrust(tip)));
         saveTips(list);
-        alert('Received ' + data.tips.length + ' tips');
+        toast('Received ' + data.tips.length + ' tips', 'success');
       }
     }
     document.querySelector('[data-tab="tips"]').click();
     autoBackupToCloud();
-  } catch (e) { alert('Not a valid Namma Tour QR code'); }
+  } catch (e) { toast('Not a valid Namma Tour QR code', 'error'); }
 }
 
 // ---------- ONLINE / OFFLINE STATUS ----------
@@ -549,18 +566,18 @@ function autoBackupToCloud() {
 async function restoreFromCloudCode(code) {
   code = (code || '').trim().toUpperCase();
   if (!code) return;
-  if (!cloudConfigured()) { alert(t('cloudNotConfigured')); return; }
+  if (!cloudConfigured()) { toast(t('cloudNotConfigured'), 'error'); return; }
   try {
     const doc = await firebaseDb.collection('backups').doc(code).get();
-    if (!doc.exists) { alert(t('backupCodeNotFound')); return; }
+    if (!doc.exists) { toast(t('backupCodeNotFound'), 'error'); return; }
     const data = doc.data();
     if (Array.isArray(data.tips)) saveTips(data.tips);
     if (Array.isArray(data.trackHistory)) { localStorage.setItem('trackHistory', JSON.stringify(data.trackHistory)); renderTripHistory(); }
     if (Array.isArray(data.savedPlaceIds)) { localStorage.setItem('savedPlaceIds', JSON.stringify(data.savedPlaceIds)); renderExplore(); }
     localStorage.setItem('deviceBackupId', code); // adopt this code so future auto-backups update the same cloud record
     document.getElementById('backupCodeShort').textContent = code;
-    alert(t('importSuccess'));
-  } catch (e) { console.warn('Cloud restore failed:', e); alert(t('cloudRestoreFailed')); }
+    toast(t('importSuccess'), 'success');
+  } catch (e) { console.warn('Cloud restore failed:', e); toast(t('cloudRestoreFailed'), 'error'); }
 }
 
 // Pulls recent community tips other travelers have shared to the cloud —
@@ -589,7 +606,7 @@ async function pullCommunityTips() {
 }
 
 document.getElementById('copyBackupCodeBtn')?.addEventListener('click', () => {
-  navigator.clipboard.writeText(getDeviceId()).then(() => alert(t('copied')));
+  navigator.clipboard.writeText(getDeviceId()).then(() => toast(t('copied'), 'success'));
 });
 document.getElementById('restoreCodeBtn')?.addEventListener('click', () => {
   restoreFromCloudCode(document.getElementById('restoreCodeInput').value);
@@ -712,7 +729,7 @@ document.addEventListener('visibilitychange', () => {
 });
 
 function startTracking() {
-  if (!navigator.geolocation) { alert(t('gpsNotSupported')); return; }
+  if (!navigator.geolocation) { toast(t('gpsNotSupported'), 'error'); return; }
   trackPoints = [];
   trackStartTime = Date.now();
   pendingGapMarker = false;
@@ -819,7 +836,7 @@ document.getElementById('trackStopBtn')?.addEventListener('click', stopTracking)
 // thing to a true "zero internet" emergency share on a stock phone.
 // ============================================================
 function sendSOS() {
-  if (!navigator.geolocation) { alert(t('gpsNotSupported')); return; }
+  if (!navigator.geolocation) { toast(t('gpsNotSupported'), 'error'); return; }
   navigator.geolocation.getCurrentPosition((pos) => {
     const { latitude, longitude } = pos.coords;
     const msg = `SOS - I need help. My location: https://maps.google.com/?q=${latitude},${longitude} (sent via Namma Tour)`;
@@ -828,7 +845,7 @@ function sendSOS() {
     } else {
       fallbackSms(msg);
     }
-  }, () => alert(t('gpsError')), { enableHighAccuracy: true, timeout: 10000 });
+  }, () => toast(t('gpsError'), 'error'), { enableHighAccuracy: true, timeout: 10000 });
 }
 function fallbackSms(msg) {
   window.location.href = `sms:?body=${encodeURIComponent(msg)}`;
@@ -850,6 +867,8 @@ function exportData() {
   a.download = `namma-tour-backup-${new Date().toISOString().slice(0, 10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
+  localStorage.setItem('lastExportTime', String(Date.now()));
+  hideExportReminder();
 }
 document.getElementById('exportBtn')?.addEventListener('click', exportData);
 
@@ -863,13 +882,42 @@ document.getElementById('importFile')?.addEventListener('change', (e) => {
       if (Array.isArray(data.tips)) saveTips(data.tips);
       if (Array.isArray(data.trackHistory)) { localStorage.setItem('trackHistory', JSON.stringify(data.trackHistory)); renderTripHistory(); }
       if (Array.isArray(data.savedPlaceIds)) { localStorage.setItem('savedPlaceIds', JSON.stringify(data.savedPlaceIds)); renderExplore(); }
-      alert(t('importSuccess'));
-    } catch (err) { alert(t('importError')); }
+      toast(t('importSuccess'), 'success');
+    } catch (err) { toast(t('importError'), 'error'); }
   };
   reader.readAsText(file);
 });
 
+// ---------- EXPORT REMINDER ----------
+// localStorage is the only datastore unless cloud backup is configured — if
+// it's been a while since the last manual export and no tips/trips exist yet
+// to lose, skip nagging. Checked once on load, not on a timer, so it can't
+// interrupt an active session.
+const EXPORT_REMINDER_DAYS = 14;
+function hideExportReminder() {
+  document.getElementById('exportReminderBanner')?.classList.add('hidden');
+}
+function checkExportReminder() {
+  const banner = document.getElementById('exportReminderBanner');
+  if (!banner) return;
+  const hasData = getTips().length > 12 || getTrackHistory().length > 0; // 12 = seed tip count, so only real user data counts
+  if (!hasData) return;
+  const last = Number(localStorage.getItem('lastExportTime') || 0);
+  const daysSince = (Date.now() - last) / 86400000;
+  if (daysSince >= EXPORT_REMINDER_DAYS) {
+    banner.classList.remove('hidden');
+  }
+}
+document.getElementById('exportReminderBtn')?.addEventListener('click', exportData);
+document.getElementById('exportReminderDismiss')?.addEventListener('click', () => {
+  // Dismissing without exporting just snoozes — re-checks next time the
+  // threshold passes again, it doesn't silently disable the reminder forever.
+  localStorage.setItem('lastExportTime', String(Date.now() - (EXPORT_REMINDER_DAYS - 3) * 86400000));
+  hideExportReminder();
+});
+
 renderTripHistory();
+checkExportReminder();
 
 // ============================================================
 // EXPLORE — curated directory of 300+ real Tamil Nadu & Kerala tourist
