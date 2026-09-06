@@ -1,4 +1,4 @@
-const CACHE_NAME = 'namma-tour-v11';
+const CACHE_NAME = 'namma-tour-v13';
 const FILES_TO_CACHE = [
   './',
   './index.html',
