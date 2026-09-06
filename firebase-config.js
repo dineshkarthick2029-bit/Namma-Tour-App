@@ -1,15 +1,12 @@
-// Replace with YOUR OWN free Firebase project keys.
-// firebase.google.com -> Console -> Add Project -> Build -> Firestore Database
-// -> Create database (test mode) -> Project settings -> Add app -> Web
-// It shows an object exactly like this one. Copy the values here.
+// Namma Tour — real Firebase project keys (namma-tour-d5f7e).
 
 var firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyCg41T0ScvDfcDhBmW2wZNYX3tB2P-uu10",
+  authDomain: "namma-tour-d5f7e.firebaseapp.com",
+  projectId: "namma-tour-d5f7e",
+  storageBucket: "namma-tour-d5f7e.firebasestorage.app",
+  messagingSenderId: "995874416365",
+  appId: "1:995874416365:web:18587cb8ca4dee9c348ee4"
 };
 
 var firebaseDb;
