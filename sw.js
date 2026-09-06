@@ -1,4 +1,4 @@
-const CACHE_NAME = 'namma-tour-v14'; // bumped so existing installs pick up the Firebase fix
+const CACHE_NAME = 'namma-tour-v15'; // bumped again to force real Firebase keys to load
 const FILES_TO_CACHE = [
   './',
   './index.html',
@@ -33,6 +33,11 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))))
+      // Without this, a newly-activated service worker still doesn't control
+      // tabs that were already open — they'd keep reading the OLD cache
+      // (old firebase-config.js) until fully closed and reopened. claim()
+      // takes control immediately so an open tab gets the fix on next fetch.
+      .then(() => self.clients.claim())
   );
 });
 
