@@ -1,4 +1,4 @@
-const CACHE_NAME = 'namma-tour-v15'; // bumped again to force real Firebase keys to load
+const CACHE_NAME = 'namma-tour-v19'; // bumped: added on-device self-diagnostics panel in Settings
 const FILES_TO_CACHE = [
   './',
   './index.html',
@@ -13,6 +13,7 @@ const FILES_TO_CACHE = [
   './icon.png',
   './icon-192.png',
   './icon-512.png',
+  './icon-maskable.png',
   './qrcode.min.js',
   'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js',
   'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js',

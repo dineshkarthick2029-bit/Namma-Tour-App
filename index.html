@@ -67,6 +67,7 @@
       <button class="chip" data-filter="warning" data-i18n="filterWarning">⚠️ Warning</button>
       <button class="chip" data-filter="recommend" data-i18n="filterRecommend">👍 Recommend</button>
     </div>
+    <div id="quarantineBanner"></div>
     <ul id="tipsList" class="tipsList"></ul>
     <p class="helpHint" data-i18n="helpHint"></p>
   </section>
@@ -146,6 +147,10 @@
 
     <button id="scanBtn" data-i18n="scanBtn">Scan a Traveler's QR</button>
     <div id="qrReader" style="width:100%"></div>
+
+    <p class="tinyNote" id="manualImportHint" data-i18n="manualImportHint"></p>
+    <textarea id="manualImportBox" rows="3" data-i18n-placeholder="manualImportPlaceholder" placeholder="Paste the code the sender copied..."></textarea>
+    <button id="manualImportBtn" data-i18n="manualImportBtn">Import Pasted Code</button>
   </section>
 
   <!-- TAB: GPS Tracking + SOS -->
@@ -217,6 +222,13 @@
     <div class="aboutBox">
       <p data-i18n="aboutText"></p>
       <p class="aboutSmall">Namma Tour v1.0 — built fully offline-first, phone-only.</p>
+    </div>
+
+    <div class="diagBox">
+      <label data-i18n="diagLabel">Device Diagnostics</label>
+      <p class="tinyNote" data-i18n="diagHint"></p>
+      <button id="runDiagBtn" data-i18n="runDiagBtn">🩺 Run Diagnostics</button>
+      <div id="diagResults"></div>
     </div>
 
     <button id="installBtn" class="hidden" data-i18n="installBtn">📲 Install App</button>

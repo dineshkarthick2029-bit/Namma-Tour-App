@@ -89,6 +89,7 @@ function saveTips(list) { localStorage.setItem('tips', JSON.stringify(list)); re
 // unverified or disputed report doesn't dominate the feed forever.
 const CONFIRM_THRESHOLD = 4;   // confirms needed to show as "Verified" — raised from 2 so a single person with 2 phones can't instantly self-verify
 const FLAG_DISPUTE_THRESHOLD = 4; // flags needed (and outnumbering confirms) to mark disputed — same reasoning
+const FLAG_QUARANTINE_THRESHOLD = 8; // flags needed (at 3x confirms) to hide by default — likely spam/malicious, not just disputed
 const URGENT_EXPIRY_DAYS = 21; // urgent alerts older than this with no confirmations get downgraded
 
 function getTipTrust(tip) {
@@ -97,14 +98,16 @@ function getTipTrust(tip) {
   const refDate = tip.lastConfirmed || tip.date;
   const ageDays = (Date.now() - new Date(refDate).getTime()) / 86400000;
   const disputed = flags >= FLAG_DISPUTE_THRESHOLD && flags > confirms;
+  const quarantined = flags >= FLAG_QUARANTINE_THRESHOLD && flags > confirms * 3;
   const expired = tip.type === 'urgent' && ageDays > URGENT_EXPIRY_DAYS && confirms < CONFIRM_THRESHOLD;
   const verified = confirms >= CONFIRM_THRESHOLD && !disputed;
-  return { confirms, flags, disputed, expired, verified, ageDays };
+  return { confirms, flags, disputed, quarantined, expired, verified, ageDays };
 }
 
 // ---------- FILTER + SEARCH STATE ----------
 let activeFilter = 'all';
 let searchTerm = '';
+let showQuarantined = false; // heavily-flagged tips are hidden by default; a toggle can reveal them
 
 // ---------- RENDER TIPS FEED ----------
 function renderTips() {
@@ -112,6 +115,9 @@ function renderTips() {
   // later via indexOf(tip) doesn't work because getTips() parses fresh
   // objects from localStorage on every call, so reference equality fails.
   let list = getTips().map((tip, i) => ({ ...tip, _idx: i }));
+
+  const quarantinedCount = list.filter(x => getTipTrust(x).quarantined).length;
+  if (!showQuarantined) list = list.filter(x => !getTipTrust(x).quarantined);
 
   if (activeFilter === 'nearby' && userCoords) {
     list.sort((a, b) => distanceKm(userCoords.lat, userCoords.lng, a.lat, a.lng) - distanceKm(userCoords.lat, userCoords.lng, b.lat, b.lng));
@@ -129,6 +135,14 @@ function renderTips() {
   if (searchTerm) list = list.filter(x => x.place.toLowerCase().includes(searchTerm.toLowerCase()));
 
   const badgeText = { recommend: t('recommend'), warning: t('warning'), urgent: t('urgent') };
+
+  const quarantineBanner = quarantinedCount > 0 ? `
+    <div class="quarantineBanner">
+      <span>${getLang() === 'ta' ? `${quarantinedCount} குறிப்பு(கள்) பல புகார்களால் மறைக்கப்பட்டுள்ளன` : `${quarantinedCount} tip(s) hidden for heavy community flagging`}</span>
+      <button onclick="toggleQuarantined()">${showQuarantined ? (getLang() === 'ta' ? 'மறை' : 'Hide them') : (getLang() === 'ta' ? 'காட்டு' : 'Show anyway')}</button>
+    </div>` : '';
+  document.getElementById('quarantineBanner').innerHTML = quarantineBanner;
+
 
   document.getElementById('tipsList').innerHTML = list.map((tip) => {
     const realIndex = tip._idx;
@@ -214,6 +228,11 @@ function markHelpful(index) {
   list[index].helpful = (list[index].helpful || 0) + 1;
   saveTips(list);
 }
+function toggleQuarantined() {
+  showQuarantined = !showQuarantined;
+  renderTips();
+}
+
 function markConfirm(index) {
   const list = getTips();
   const tip = list[index];
@@ -462,6 +481,21 @@ document.getElementById('scanBtn').addEventListener('click', () => {
     scanner = null;
   });
 });
+// Manual paste-in fallback: some phones will never have internet to fetch
+// the camera-scanner library, and some senders can't get a stable camera
+// scan to register. This path uses the exact same handleScannedData()
+// parser as a real scan, so it's not a second code path to maintain —
+// just a second way to get the same text in.
+document.getElementById('manualImportBtn').addEventListener('click', () => {
+  const box = document.getElementById('manualImportBox');
+  const val = box.value.trim();
+  if (!val) {
+    toast(getLang() === 'ta' ? 'முதலில் குறியீட்டை ஒட்டவும்' : 'Paste a code first', 'warn');
+    return;
+  }
+  handleScannedData(val);
+  box.value = '';
+});
 // Holds partially-scanned multi-part bulk QR batches until every part has
 // been scanned (each part is scanned as a separate QR code, one at a time).
 let pendingBulkBatches = {};
@@ -615,15 +649,23 @@ document.getElementById('backupCodeShort').textContent = getDeviceId();
 updateCloudStatusLabel(cloudConfigured() ? 'ok' : 'off');
 
 // ---------- FIREBASE SYNC (push newly-added local tips to the community feed) ----------
-function syncPendingTips() {
+async function syncPendingTips() {
   if (!cloudConfigured()) return;
   const list = getTips();
   let changed = false;
-  list.forEach(async (tip) => {
+  // Bug fix: list.forEach(async ...) never waits for the pushes to finish,
+  // so the old code checked `changed` (and could call saveTips) before any
+  // of them resolved — it was always false, so the 'synced' flag never got
+  // written back to storage. That meant the same unsynced tips got pushed
+  // to Firestore again on every single online reload, silently piling up
+  // duplicate copies of every tip in the shared community feed. Using
+  // Promise.all + await here means we only save once everything has
+  // actually finished, and the flag sticks.
+  await Promise.all(list.map(async (tip) => {
     if (!tip.synced) {
       try { await firebaseDb.collection('tips').add(tip); tip.synced = true; changed = true; } catch (e) { console.warn('Tip sync failed:', e); }
     }
-  });
+  }));
   if (changed) saveTips(list);
 }
 
@@ -1062,3 +1104,90 @@ applyTheme();
 updateStatus();
 initOnboarding();
 requestLocation();
+
+// ---------- DEVICE DIAGNOSTICS ----------
+// This is the honest replacement for "I tested it and it works" — I can't
+// hold this phone, so instead the phone reports on itself. Each check runs
+// live against the actual browser/device this page is loaded on, not a
+// guess about what should be true.
+async function runDiagnostics() {
+  const ta = getLang() === 'ta';
+  const rows = [];
+  const push = (label, ok, detail) => rows.push({ label, ok, detail });
+
+  // Service worker + offline cache
+  if ('serviceWorker' in navigator) {
+    const reg = await navigator.serviceWorker.getRegistration().catch(() => null);
+    push(ta ? 'ஆஃப்லைன் சேமிப்பு (Service Worker)' : 'Offline caching (Service Worker)', !!reg && reg.active,
+      reg ? (reg.active ? (ta ? 'செயலில் உள்ளது' : 'active') : (ta ? 'பதிவு செய்யப்பட்டது, செயலில் இல்லை' : 'registered, not yet active')) : (ta ? 'பதிவு செய்யப்படவில்லை' : 'not registered'));
+  } else {
+    push(ta ? 'ஆஃப்லைன் சேமிப்பு (Service Worker)' : 'Offline caching (Service Worker)', false, ta ? 'இந்த உலாவியில் ஆதரவு இல்லை' : 'not supported in this browser');
+  }
+
+  // Cache contents actually present
+  try {
+    const keys = await caches.keys();
+    const ourCache = keys.find(k => k.startsWith('namma-tour-'));
+    const entries = ourCache ? (await caches.open(ourCache)).keys() : [];
+    const count = ourCache ? (await entries).length : 0;
+    push(ta ? 'கேச் செய்யப்பட்ட கோப்புகள்' : 'Cached files for offline use', count > 5, `${count} ${ta ? 'கோப்புகள்' : 'files cached'}`);
+  } catch (e) {
+    push(ta ? 'கேச் செய்யப்பட்ட கோப்புகள்' : 'Cached files for offline use', false, String(e.message || e));
+  }
+
+  // Camera permission (for QR scanning)
+  try {
+    if (navigator.permissions) {
+      const p = await navigator.permissions.query({ name: 'camera' }).catch(() => null);
+      push(ta ? 'கேமரா அனுமதி (QR ஸ்கேன்)' : 'Camera permission (QR scan)', p ? p.state === 'granted' : null,
+        p ? p.state : (ta ? 'சரிபார்க்க முடியவில்லை — ஸ்கேன் செய்யும்போது கேட்கும்' : "can't check ahead of time — will prompt when you tap Scan"));
+    } else {
+      push(ta ? 'கேமரா அனுமதி (QR ஸ்கேன்)' : 'Camera permission (QR scan)', null, ta ? 'ஸ்கேன் செய்யும்போது கேட்கும்' : 'will prompt when you tap Scan');
+    }
+  } catch (e) { push(ta ? 'கேமரா அனுமதி (QR ஸ்கேன்)' : 'Camera permission (QR scan)', null, ta ? 'சரிபார்க்க முடியவில்லை' : 'unable to check'); }
+
+  // QR scanner library actually loaded (needs one moment of internet, first time only)
+  push(ta ? 'கேமரா ஸ்கேனர் நூலகம்' : 'Camera scanner library loaded', typeof Html5Qrcode !== 'undefined',
+    typeof Html5Qrcode !== 'undefined' ? (ta ? 'தயார்' : 'ready') : (ta ? 'இன்னும் இல்லை — ஒருமுறை இணையம் தேவை, அல்லது ஒட்டி இறக்குமதி செய்யவும்' : "not yet — needs internet once, or use the paste-in import instead"));
+
+  // GPS / geolocation
+  push(ta ? 'இருப்பிடம் (GPS)' : 'Location (GPS)', !!userCoords, userCoords ? `${userCoords.lat.toFixed(3)}, ${userCoords.lng.toFixed(3)}` : (ta ? 'இன்னும் கிடைக்கவில்லை' : 'not available yet'));
+
+  // Wake Lock (keeps GPS tracking alive on screen lock)
+  push(ta ? 'ஸ்கிரீன் லாக் ஆனாலும் GPS ஓடும் (Wake Lock)' : 'GPS keeps running when screen locks (Wake Lock)', 'wakeLock' in navigator,
+    'wakeLock' in navigator ? (ta ? 'ஆதரிக்கப்படுகிறது' : 'supported') : (ta ? 'இந்த சாதனத்தில் ஆதரவு இல்லை — கண்காணிக்கும் போது திரையை திறந்து வையுங்கள்' : 'not supported on this device — keep the screen on while tracking'));
+
+  // Voice / speech
+  push(ta ? 'குரல் உதவியாளர் (பேச்சு அங்கீகாரம்)' : 'Voice assistant (speech recognition)', !!(window.SpeechRecognition || window.webkitSpeechRecognition),
+    (window.SpeechRecognition || window.webkitSpeechRecognition) ? (ta ? 'ஆதரிக்கப்படுகிறது' : 'supported') : (ta ? 'இந்த உலாவியில் ஆதரவு இல்லை' : 'not supported in this browser'));
+  push(ta ? 'குரல் படித்தல் (Text-to-Speech)' : 'Voice read-aloud (Text-to-Speech)', !!window.speechSynthesis, window.speechSynthesis ? (ta ? 'ஆதரிக்கப்படுகிறது' : 'supported') : (ta ? 'ஆதரவு இல்லை' : 'not supported'));
+
+  // Local storage read/write
+  try {
+    const testKey = '__namma_diag_test__';
+    localStorage.setItem(testKey, '1');
+    const ok = localStorage.getItem(testKey) === '1';
+    localStorage.removeItem(testKey);
+    push(ta ? 'சேமிப்பு (Local Storage)' : 'Local storage (saving tips/settings)', ok, ok ? (ta ? 'சரியாக வேலை செய்கிறது' : 'working') : (ta ? 'எழுத முடியவில்லை' : 'write failed'));
+  } catch (e) { push(ta ? 'சேமிப்பு (Local Storage)' : 'Local storage (saving tips/settings)', false, ta ? 'கிடைக்கவில்லை (தனியார் பயன்முறை?)' : 'unavailable (private browsing?)'); }
+
+  // Data actually loaded
+  const tipCount = getTips().length;
+  const placeCount = (typeof curatedPlaces !== 'undefined') ? curatedPlaces.length : 0;
+  push(ta ? 'குறிப்புகள் ஏற்றப்பட்டன' : 'Tips loaded', tipCount > 0, `${tipCount} ${ta ? 'குறிப்புகள்' : 'tips'}`);
+  push(ta ? 'இடங்கள் ஏற்றப்பட்டன (Explore)' : 'Places loaded (Explore)', placeCount > 0, `${placeCount} ${ta ? 'இடங்கள்' : 'places'}`);
+
+  // Cloud sync configured
+  push(ta ? 'கிளவுட் ஒத்திசைவு (Firebase)' : 'Cloud sync (Firebase)', cloudConfigured(), cloudConfigured() ? (ta ? 'கட்டமைக்கப்பட்டது' : 'configured') : (ta ? 'கட்டமைக்கப்படவில்லை' : 'not configured'));
+
+  // Online status right now
+  push(ta ? 'இணைய இணைப்பு' : 'Internet connection right now', navigator.onLine, navigator.onLine ? (ta ? 'இணைக்கப்பட்டுள்ளது' : 'online') : (ta ? 'ஆஃப்லைனில்' : 'offline — this is normal for this app'));
+
+  const icon = (ok) => ok === true ? '✅' : ok === false ? '❌' : '➖';
+  document.getElementById('diagResults').innerHTML = `
+    <ul class="diagList">
+      ${rows.map(r => `<li><span class="diagIcon">${icon(r.ok)}</span><span class="diagLabel">${r.label}</span><span class="diagDetail">${r.detail}</span></li>`).join('')}
+    </ul>
+    <p class="tinyNote">${ta ? 'இது இந்த குறிப்பிட்ட சாதனம் மற்றும் உலாவியைப் பற்றியது — வேறு போன்/கேமரா வேறு முடிவைக் காட்டலாம்.' : 'This reflects this specific device and browser right now — a different phone or camera may show different results.'}</p>`;
+}
+document.getElementById('runDiagBtn')?.addEventListener('click', runDiagnostics);
