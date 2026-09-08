@@ -428,6 +428,9 @@ document.getElementById('qrNextBtn')?.addEventListener('click', () => {
 });
 
 // Renders a real QR code when the qrcode.min.js library (bundled locally —
+// no CDN needed) is available; otherwise falls back to a copyable text box
+// so a tip can still be shared with zero QR library loaded at all.
+// Renders a real QR code when the qrcode.min.js library (bundled locally —
 // no CDN needed) is available; otherwise falls back to a copyable text box.
 //
 // IMPORTANT: the payload is percent-encoded (encodeURIComponent) before
@@ -499,10 +502,15 @@ let pendingBulkBatches = {};
 
 function handleScannedData(text) {
   try {
-    // QR-scanned text is percent-encoded (see renderQrOrFallback); the
-    // copy-paste fallback text is plain JSON with no % sequences, so
-    // decodeURIComponent safely passes it through unchanged either way.
-    const data = JSON.parse(decodeURIComponent(text));
+    // QR-scanned text is percent-encoded (see renderQrOrFallback). The
+    // copy-paste fallback text is plain JSON and is NOT guaranteed to be
+    // free of literal '%' characters (a tip like "50% off" breaks that
+    // assumption) — decodeURIComponent throws "URI malformed" on a bare
+    // '%' not followed by two hex digits. Try decoding first (real QR
+    // scans need it); if that throws, fall back to the raw text as-is.
+    let decoded;
+    try { decoded = decodeURIComponent(text); } catch (e) { decoded = text; }
+    const data = JSON.parse(decoded);
     const list = getTips();
     // Confirms/flags are this app's trust signal — never accept a sender's
     // claimed counts at face value, or a crafted QR could fake "verified".
@@ -687,7 +695,7 @@ function initOnboarding() {
     step++;
     if (step < slides.length) {
       slides[step].classList.remove('hidden');
-      if (step === slides.length - 1) document.getElementById('obNextBtn').textContent = t('obStart');
+      if (step === slides.length - 1) document.getElementById('obNextBtn').textContent = 'Start';
     } else {
       overlay.classList.add('hidden');
       localStorage.setItem('onboarded', '1');
