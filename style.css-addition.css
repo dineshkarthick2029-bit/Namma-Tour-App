@@ -1,0 +1,436 @@
+/* Namma Tour — style.css-addition.css
+   New styles for: map, SOS, fare checker, phrasebook, templates,
+   7-language selector, DK AI iframe, and general polish.
+   Loads AFTER style.css — only adds, does not override existing theme. */
+
+/* ============ TEMPLATE PICKER (Add tab) ============ */
+.templateRow {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.templateBtn {
+  flex: 1;
+  min-width: 100px;
+  padding: 12px 10px;
+  border-radius: 12px;
+  border: 1px solid #2a4a36;
+  background: #12301f;
+  color: #e8f0e9;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  margin: 0;
+  width: auto;
+}
+.templateBtn.active { background: #d4af37; color: #16210b; border-color: #d4af37; }
+.templateUrgentBtn { border-left: 3px solid #e03131; }
+.templateWarningBtn { border-left: 3px solid #d97757; }
+.templateRecommendBtn { border-left: 3px solid #3a8a5a; }
+.templateFields {
+  background: #0f2a19;
+  border: 1px solid #2a4a36;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+}
+.templateFields label { margin-top: 10px; }
+.templateFields label:first-child { margin-top: 0; }
+.templateFields select,
+.templateFields input { margin-bottom: 6px; }
+
+/* ============ MAP ============ */
+.mapToggleRow {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.mapToggleBtn {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #2a4a36;
+  background: #12301f;
+  color: #a9c2ae;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  margin: 0;
+  width: auto;
+}
+.mapToggleBtn.active { background: #d4af37; color: #16210b; border-color: #d4af37; }
+.mapWrap {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  margin: 12px 0;
+  background: #0a1f13;
+  border: 1px solid #2a4a36;
+}
+.mapContainer {
+  width: 100%;
+  height: 420px;
+  background: #0a1f13;
+  position: relative;
+}
+.mapContainer .tinyNote {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #a9c2ae;
+  font-size: 13px;
+}
+.mapActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.mapActions button {
+  flex: 1;
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 13px;
+}
+
+/* Leaflet dark overlay (matches app theme) */
+.mapContainer .leaflet-container { background: #0a1f13; }
+.mapContainer .leaflet-tile { filter: brightness(0.75) hue-rotate(20deg) saturate(0.85); }
+.mapContainer .leaflet-popup-content-wrapper,
+.mapContainer .leaflet-popup-tip { background: #12301f; color: #e8f0e9; border: 1px solid #2a4a36; }
+.mapContainer .leaflet-control-attribution { background: rgba(0,0,0,0.5) !important; color: #a9c2ae !important; font-size: 10px; }
+
+/* Offline SVG map area */
+#mapContainer svg { display: block; }
+
+/* ============ SOS ============ */
+.sosBtnBig {
+  width: 100%;
+  padding: 24px 16px;
+  font-size: 20px;
+  font-weight: 800;
+  background: linear-gradient(180deg, #e03131 0%, #b01f1f 100%);
+  color: #fff;
+  border: none;
+  border-radius: 16px;
+  margin: 16px 0;
+  box-shadow: 0 6px 20px rgba(224, 49, 49, 0.4);
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  animation: sosPulse 2s ease-in-out infinite;
+}
+@keyframes sosPulse {
+  0%, 100% { box-shadow: 0 6px 20px rgba(224, 49, 49, 0.4); }
+  50% { box-shadow: 0 6px 30px rgba(224, 49, 49, 0.8); }
+}
+.sosBtnBig:active { transform: scale(0.98); }
+
+.sosSpokenBox {
+  background: #2a1818;
+  border: 1px solid #5c2a2a;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin: 12px 0;
+}
+.sosSpokenBox p { color: #f3b9b9; font-size: 15px; line-height: 1.5; margin: 6px 0 0; }
+.sosSpokenBox #sosSpokenText { color: #fff; font-weight: 500; font-size: 14px; }
+
+.sectionSub {
+  font-size: 15px;
+  color: #d4af37;
+  margin: 24px 0 8px;
+  border-top: 1px solid #1c3c28;
+  padding-top: 18px;
+}
+
+.nearestHelp {
+  background: #0f2a19;
+  border: 1px solid #2a4a36;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin: 14px 0;
+}
+.nearestHelp h4 {
+  font-size: 13px;
+  color: #d4af37;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.nearestHelp .helpRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid #1c3c28;
+  font-size: 13px;
+}
+.nearestHelp .helpRow:last-child { border-bottom: none; }
+.nearestHelp .helpRow .helpName { flex: 1; color: #cfe0d2; }
+.nearestHelp .helpRow .helpDist { color: #7c9a83; font-size: 12px; }
+.nearestHelp .helpRow a {
+  background: #d4af37;
+  color: #16210b;
+  padding: 6px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.emergencyPhrasesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+.emergencyCard {
+  background: #12301f;
+  border: 1px solid #2a4a36;
+  border-radius: 12px;
+  padding: 14px 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.emergencyCard:active { background: #1a4530; transform: scale(0.97); }
+.emergencyCard .emIcon { font-size: 24px; margin-bottom: 6px; }
+.emergencyCard .emText { font-size: 12px; color: #cfe0d2; line-height: 1.3; }
+
+.helplinesList {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0;
+}
+.helplinesList li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  background: #12301f;
+  border: 1px solid #2a4a36;
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+.helplinesList .hlName { color: #cfe0d2; font-size: 14px; }
+.helplinesList .hlNum { color: #d4af37; font-weight: 700; font-size: 15px; text-decoration: none; }
+.helplinesList .hlNum:hover { text-decoration: underline; }
+
+/* ============ FARE CHECKER ============ */
+.fareResult {
+  background: #0f2a19;
+  border: 2px solid #d4af37;
+  border-radius: 14px;
+  padding: 18px;
+  margin-top: 16px;
+  text-align: center;
+}
+.fareResult .fareRange {
+  font-size: 32px;
+  font-weight: 800;
+  color: #d4af37;
+  margin: 8px 0;
+}
+.fareResult .fareKm {
+  font-size: 13px;
+  color: #a9c2ae;
+  margin-bottom: 12px;
+}
+.fareResult .fareNote {
+  font-size: 12px;
+  color: #7c9a83;
+  line-height: 1.5;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #1c3c28;
+}
+.fareResult .fareRoute {
+  font-size: 14px;
+  color: #cfe0d2;
+  margin-bottom: 6px;
+}
+.fareDriverQr {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+}
+.fareDriverQr canvas,
+.fareDriverQr img {
+  background: #fff;
+  padding: 8px;
+  border-radius: 10px;
+}
+
+/* ============ PHRASEBOOK ============ */
+.phraseList {
+  margin-top: 12px;
+}
+.phraseCard {
+  background: #12301f;
+  border: 1px solid #2a4a36;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.phraseCard:active { background: #1a4530; }
+.phraseCard .phLocal {
+  font-size: 18px;
+  color: #d4af37;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.phraseCard .phRoman {
+  font-size: 13px;
+  color: #a9c2ae;
+  font-style: italic;
+  margin-bottom: 6px;
+}
+.phraseCard .phMeaning {
+  font-size: 14px;
+  color: #cfe0d2;
+}
+.phraseCard .phSpeak {
+  float: right;
+  font-size: 20px;
+  color: #d4af37;
+}
+
+/* ============ LANGUAGE SELECTOR ============ */
+#langSelect {
+  width: auto;
+  padding: 8px 14px;
+  font-size: 14px;
+  background: #12301f;
+  color: #e8f0e9;
+  border: 1px solid #2a4a36;
+  border-radius: 8px;
+  margin: 0;
+}
+body[data-theme="light"] #langSelect { background: #fff; color: #16210b; border-color: #dbe5dc; }
+
+.settingsLinkBtn {
+  background: #d4af37;
+  color: #16210b;
+  padding: 8px 14px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+/* ============ DK AI IFRAME ============ */
+.dkAiContainer {
+  margin-top: 12px;
+  min-height: 500px;
+}
+.aiWrapper {
+  display: flex;
+  flex-direction: column;
+  height: 70vh;
+  min-height: 500px;
+}
+.aiHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: #12301f;
+  border: 1px solid #2a4a36;
+  border-radius: 12px 12px 0 0;
+  color: #d4af37;
+  font-weight: 700;
+  font-size: 14px;
+}
+.aiOpenBtn {
+  background: #d4af37;
+  color: #16210b;
+  padding: 6px 12px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 12px;
+  font-weight: 700;
+}
+.aiFrame {
+  flex: 1;
+  width: 100%;
+  border: 1px solid #2a4a36;
+  border-top: none;
+  background: #fff;
+  border-radius: 0 0 12px 12px;
+}
+.aiHint { margin-top: 8px; text-align: center; }
+
+.aiOffline {
+  padding: 40px 20px;
+  text-align: center;
+  background: #12301f;
+  border: 1px solid #2a4a36;
+  border-radius: 12px;
+}
+.aiMicBtn {
+  background: #d4af37;
+  color: #16210b;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  margin-top: 16px;
+  cursor: pointer;
+  width: auto;
+}
+
+/* ============ 7-LANGUAGE NOTICE ============ */
+.voiceLangNote {
+  font-size: 11px;
+  color: #7c9a83;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+/* ============ LIGHT THEME OVERRIDES ============ */
+body[data-theme="light"] .templateBtn { background: #fff; color: #16210b; border-color: #dbe5dc; }
+body[data-theme="light"] .templateBtn.active { background: #d4af37; color: #16210b; }
+body[data-theme="light"] .templateFields { background: #f4f7f4; border-color: #dbe5dc; }
+body[data-theme="light"] .mapToggleBtn { background: #fff; color: #5c6b5e; border-color: #dbe5dc; }
+body[data-theme="light"] .mapToggleBtn.active { background: #d4af37; color: #16210b; }
+body[data-theme="light"] .mapWrap,
+body[data-theme="light"] .mapContainer { background: #eef3ee; }
+body[data-theme="light"] .nearestHelp,
+body[data-theme="light"] .fareResult,
+body[data-theme="light"] .templateFields { background: #fff; }
+body[data-theme="light"] .emergencyCard { background: #fff; border-color: #dbe5dc; }
+body[data-theme="light"] .emergencyCard .emText { color: #16210b; }
+body[data-theme="light"] .helplinesList li { background: #fff; border-color: #dbe5dc; }
+body[data-theme="light"] .helplinesList .hlName { color: #16210b; }
+body[data-theme="light"] .phraseCard { background: #fff; border-color: #dbe5dc; }
+body[data-theme="light"] .phraseCard .phMeaning { color: #16210b; }
+body[data-theme="light"] .aiHeader { background: #fff; border-color: #dbe5dc; }
+body[data-theme="light"] .aiOffline { background: #fff; border-color: #dbe5dc; }
+body[data-theme="light"] .sosSpokenBox { background: #fdeaea; border-color: #f0c2c2; }
+body[data-theme="light"] .sosSpokenBox p { color: #a12525; }
+body[data-theme="light"] .sosSpokenBox #sosSpokenText { color: #721a1a; }
+
+/* ============ MOBILE TWEAKS ============ */
+@media (max-width: 400px) {
+  .templateBtn { font-size: 11px; padding: 10px 6px; min-width: 80px; }
+  .sosBtnBig { font-size: 18px; padding: 20px 12px; }
+  .mapContainer { height: 340px; }
+  .emergencyPhrasesGrid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ============ FIX THE TAG CHIPS THAT SHOW ICON + LABEL ============ */
+.chip span { pointer-events: none; }
+
+/* ============ SECTION SUB TITLES ============ */
+h3.sectionSub + p.tinyNote { margin-top: 4px; margin-bottom: 12px; }
