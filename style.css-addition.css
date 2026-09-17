@@ -434,3 +434,165 @@ body[data-theme="light"] .sosSpokenBox #sosSpokenText { color: #721a1a; }
 
 /* ============ SECTION SUB TITLES ============ */
 h3.sectionSub + p.tinyNote { margin-top: 4px; margin-bottom: 12px; }
+/* ============ PLAN TAB ============ */
+.planResult {
+  background: #0f2a19;
+  border: 2px solid #d4af37;
+  border-radius: 14px;
+  padding: 16px;
+  margin-top: 16px;
+}
+.planResult .planStop {
+  padding: 12px 0;
+  border-bottom: 1px solid #1c3c28;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.planResult .planStop:last-child { border-bottom: none; }
+.planResult .planNum {
+  background: #d4af37;
+  color: #16210b;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.planResult .planStopName { color: #e8f0e9; font-weight: 600; font-size: 14px; }
+.planResult .planStopMeta { color: #7c9a83; font-size: 12px; margin-top: 2px; }
+.planResult .planSummary {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #1c3c28;
+  color: #a9c2ae;
+  font-size: 13px;
+}
+.planDivider {
+  border: none;
+  border-top: 1px solid #1c3c28;
+  margin: 28px 0 20px;
+}
+body[data-theme="light"] .planResult { background: #fff; border-color: #d4af37; }
+body[data-theme="light"] .planResult .planStopName { color: #16210b; }
+
+/* ============ WEATHER MEMORY ============ */
+.weatherButtons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 10px 0 16px;
+}
+.weatherBtn {
+  background: #12301f;
+  border: 1px solid #2a4a36;
+  color: #cfe0d2;
+  border-radius: 12px;
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  margin: 0;
+  width: auto;
+}
+.weatherBtn .wIcon { font-size: 22px; }
+.weatherBtn.active {
+  background: #d4af37;
+  color: #16210b;
+  border-color: #d4af37;
+}
+body[data-theme="light"] .weatherBtn { background: #fff; color: #16210b; border-color: #dbe5dc; }
+body[data-theme="light"] .weatherBtn.active { background: #d4af37; }
+
+/* ============ FIND TAB ============ */
+.findResult {
+  background: #0f2a19;
+  border: 1px solid #2a4a36;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 14px;
+}
+.findResult .findRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #1c3c28;
+  font-size: 14px;
+  gap: 12px;
+}
+.findResult .findRow:last-child { border-bottom: none; }
+.findResult .findLabel { color: #a9c2ae; flex-shrink: 0; }
+.findResult .findValue { color: #e8f0e9; font-weight: 600; text-align: right; }
+.findResult .findValue small { color: #7c9a83; font-weight: 400; font-size: 12px; }
+.findResult .findValue a { color: #d4af37; text-decoration: none; font-weight: 700; }
+body[data-theme="light"] .findResult { background: #fff; border-color: #dbe5dc; }
+body[data-theme="light"] .findResult .findValue { color: #16210b; }
+
+/* ============ BUDGET TRACKER ============ */
+.budgetSummary {
+  margin-top: 20px;
+}
+.budgetTotals {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.budgetStat {
+  background: #12301f;
+  border: 1px solid #2a4a36;
+  border-radius: 12px;
+  padding: 12px 8px;
+  text-align: center;
+}
+.budgetStat .statNum {
+  font-size: 20px;
+  font-weight: 800;
+  color: #d4af37;
+}
+.budgetStat .statLabel {
+  font-size: 11px;
+  color: #a9c2ae;
+  margin-top: 3px;
+}
+.budgetCatList {
+  background: #12301f;
+  border: 1px solid #2a4a36;
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+.budgetCatRow {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #1c3c28;
+  font-size: 13px;
+  color: #cfe0d2;
+}
+.budgetCatRow:last-child { border-bottom: none; }
+.budgetCatRow span:last-child { color: #d4af37; font-weight: 700; }
+body[data-theme="light"] .budgetStat,
+body[data-theme="light"] .budgetCatList { background: #fff; border-color: #dbe5dc; }
+body[data-theme="light"] .budgetCatRow { color: #16210b; }
+
+/* ============ SECTION HEADINGS IN NEW TABS ============ */
+#plan .sectionSub,
+#find .sectionSub {
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid #1c3c28;
+}
+
+/* ============ MOBILE TWEAKS ============ */
+@media (max-width: 400px) {
+  .weatherButtons { grid-template-columns: repeat(3, 1fr); }
+  .budgetTotals { grid-template-columns: repeat(3, 1fr); }
+  .weatherBtn { font-size: 11px; padding: 10px 4px; }
+}
