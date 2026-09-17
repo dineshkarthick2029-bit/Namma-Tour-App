@@ -10,13 +10,12 @@
 <meta name="theme-color" content="#0d2818">
 <link rel="stylesheet" href="style.css">
 <link rel="stylesheet" href="style.css-addition.css">
-<!-- Leaflet for online map (cached by sw.js after first load) -->
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
 </head>
 <body>
 
-  <!-- ================= ONBOARDING ================= -->
+  <!-- ============ ONBOARDING ============ -->
   <div id="onboarding" class="onboardingOverlay hidden">
     <div class="onboardingCard">
       <div id="obSlide1" class="obSlide">
@@ -38,7 +37,7 @@
     </div>
   </div>
 
-  <!-- ================= HEADER ================= -->
+  <!-- ============ HEADER ============ -->
   <header>
     <div class="brand">
       <img class="logo" src="icon-192.png" alt="Namma Tour logo">
@@ -52,7 +51,7 @@
     <p data-i18n="heroDesc">Every note here was left by a traveler and passed phone-to-phone by QR code.</p>
   </div>
 
-  <!-- ================= SEGMENT TABS ================= -->
+  <!-- ============ SEGMENT TABS ============ -->
   <div class="segment">
     <button class="segBtn active" data-tab="tips" data-i18n="tabTips">Tips</button>
     <button class="segBtn" data-tab="add" data-i18n="tabAdd">Add</button>
@@ -63,11 +62,13 @@
     <button class="segBtn" data-tab="sos" data-i18n="tabSOS">SOS</button>
     <button class="segBtn" data-tab="fare" data-i18n="tabFare">Fare</button>
     <button class="segBtn" data-tab="phrase" data-i18n="tabPhrase">Phrases</button>
+    <button class="segBtn" data-tab="plan" data-i18n="tabPlan">Plan</button>
+    <button class="segBtn" data-tab="find" data-i18n="tabFind">Find</button>
     <button class="segBtn" data-tab="ai" data-i18n="tabAI">AI</button>
     <button class="segBtn" data-tab="settings" data-i18n="tabSettings">Settings</button>
   </div>
 
-  <!-- ================= TAB: TIPS ================= -->
+  <!-- ============ TAB: TIPS ============ -->
   <section id="tips" class="tab active">
     <div id="statsRow" class="statsRow"></div>
     <input id="searchBox" class="searchBox" data-i18n-placeholder="searchPlaceholder" placeholder="Search place...">
@@ -83,41 +84,33 @@
     <p class="helpHint" data-i18n="helpHint"></p>
   </section>
 
-  <!-- ================= TAB: ADD ================= -->
+  <!-- ============ TAB: ADD ============ -->
   <section id="add" class="tab">
     <h2 data-i18n="addTitle">Add a Tip</h2>
-
     <div class="templateRow">
       <button class="templateBtn templateUrgentBtn" data-template="urgent" data-i18n="templateUrgent">🚨 Urgent</button>
       <button class="templateBtn templateWarningBtn" data-template="warning" data-i18n="templateWarning">⚠️ Warning</button>
       <button class="templateBtn templateRecommendBtn" data-template="recommend" data-i18n="templateRecommend">👍 Recommend</button>
     </div>
-
     <div id="templateFields" class="templateFields hidden"></div>
-
     <label data-i18n="addPlaceLabel">Place name</label>
     <input id="newPlace" data-i18n-placeholder="addPlacePlaceholder" placeholder="e.g. Kolukkumalai viewpoint">
-
     <label data-i18n="addTypeLabel">Type</label>
     <select id="newType">
       <option value="recommend">👍 Recommend</option>
       <option value="warning">⚠️ Warning</option>
       <option value="urgent">🚨 Urgent Safety Alert</option>
     </select>
-
     <label data-i18n="addTextLabel">Your tip</label>
     <textarea id="newText" rows="3" data-i18n-placeholder="addTextPlaceholder" placeholder="Write something useful..."></textarea>
-
     <button id="saveTipBtn" data-i18n="addBtn">Save Tip</button>
   </section>
 
-  <!-- ================= TAB: EXPLORE ================= -->
+  <!-- ============ TAB: EXPLORE ============ -->
   <section id="explore" class="tab">
     <h2 data-i18n="exploreTitle">Explore Tamil Nadu &amp; Kerala</h2>
     <p class="note" data-i18n="exploreDesc"></p>
-
     <input id="exploreSearch" class="searchBox" data-i18n-placeholder="exploreSearchPlaceholder" placeholder="Search 500+ places...">
-
     <div class="chipsRow" id="stateChipsRow">
       <button class="chip active" data-state="all" data-i18n="stateAll">All States</button>
       <button class="chip" data-state="Tamil Nadu">Tamil Nadu</button>
@@ -136,50 +129,41 @@
       <button class="chip" data-cat="museum">🖼️ <span data-i18n="catMuseum">Museum</span></button>
       <button class="chip" data-cat="adventure">🎢 <span data-i18n="catAdventure">Adventure</span></button>
     </div>
-
     <div class="exploreActions">
       <button id="surpriseBtn" data-i18n="surpriseBtn">🎲 Surprise Me</button>
       <button id="nearMeBtn" data-i18n="nearMeBtn">📍 Sort by Distance</button>
     </div>
-
     <div id="savedPlacesBox" class="savedPlacesBox hidden">
       <p class="tinyNote" id="savedPlacesLabel"></p>
       <div id="savedPlacesList"></div>
     </div>
-
     <p id="exploreCount" class="tinyNote"></p>
     <div id="exploreList" class="exploreList"></div>
   </section>
 
-  <!-- ================= TAB: MAP ================= -->
+  <!-- ============ TAB: MAP ============ -->
   <section id="map" class="tab">
     <h2 data-i18n="mapTitle">Map</h2>
-
     <div class="mapToggleRow">
       <button id="mapOnlineBtn" class="mapToggleBtn active" data-i18n="mapOnline">🌐 Online Map</button>
       <button id="mapOfflineBtn" class="mapToggleBtn" data-i18n="mapOffline">📴 Offline Map</button>
     </div>
-
     <input id="mapSearchBox" class="searchBox" data-i18n-placeholder="mapSearchPlaceholder" placeholder="Search map places...">
-
     <div class="mapWrap">
       <div id="mapContainer" class="mapContainer">
         <p class="tinyNote" data-i18n="mapLoading">Loading map…</p>
       </div>
     </div>
-
     <div class="mapActions">
       <button id="mapLocateBtn">📍 <span data-i18n="mapYouAreHere">You are here</span></button>
     </div>
-
     <p class="tinyNote" id="mapModeHint" data-i18n="mapOnlineHint">Real map with streets — online only</p>
   </section>
 
-  <!-- ================= TAB: SYNC ================= -->
+  <!-- ============ TAB: SYNC ============ -->
   <section id="sync" class="tab">
     <h2 data-i18n="syncTitle">Sync With Another Traveler</h2>
     <p class="note" data-i18n="syncDesc"></p>
-
     <button id="showQrBtn" data-i18n="showQrBtn">Show My Tips as QR</button>
     <div id="qrOutput"></div>
     <div id="qrPageNav" class="qrPageNav hidden">
@@ -188,78 +172,61 @@
       <button id="qrNextBtn" type="button">▶</button>
     </div>
     <p class="tinyNote" id="qrPageHint" data-i18n="qrPageHint"></p>
-
     <button id="scanBtn" data-i18n="scanBtn">Scan a Traveler's QR</button>
     <div id="qrReader" style="width:100%"></div>
-
     <p class="tinyNote" id="manualImportHint" data-i18n="manualImportHint"></p>
     <textarea id="manualImportBox" rows="3" data-i18n-placeholder="manualImportPlaceholder" placeholder="Paste the code the sender copied..."></textarea>
     <button id="manualImportBtn" data-i18n="manualImportBtn">Import Pasted Code</button>
   </section>
 
-  <!-- ================= TAB: TRACK ================= -->
+  <!-- ============ TAB: TRACK ============ -->
   <section id="track" class="tab">
     <h2 data-i18n="trackTitle">Offline GPS Tracking</h2>
     <p class="note" data-i18n="trackDesc"></p>
-
     <div id="trackStats" class="statsRow"></div>
     <canvas id="trackCanvas" width="320" height="220" class="trackCanvas"></canvas>
     <p class="tinyNote" id="trackHint" data-i18n="trackHint"></p>
     <div id="wakeLockBanner" class="wakeLockBanner hidden"></div>
-
     <button id="trackStartBtn" data-i18n="trackStartBtn">▶️ Start Tracking</button>
     <button id="trackStopBtn" class="hidden dangerBtn" data-i18n="trackStopBtn">⏹️ Stop &amp; Save Trip</button>
-
     <div id="tripHistoryList" class="tripHistoryList"></div>
   </section>
 
-  <!-- ================= TAB: SOS ================= -->
+  <!-- ============ TAB: SOS ============ -->
   <section id="sos" class="tab">
     <h2 data-i18n="sosTitle">Emergency SOS</h2>
     <p class="note" data-i18n="sosDesc"></p>
-
     <button id="sosBtnBig" class="sosBtnBig" data-i18n="sosBtnBig">🆘 TAP FOR SOS</button>
-
     <div id="sosSpokenBox" class="sosSpokenBox hidden">
       <p class="tinyNote" id="sosSpokenLabel" data-i18n="sosSpeaking">Speaking your location…</p>
       <p id="sosSpokenText"></p>
     </div>
-
     <p class="tinyNote" data-i18n="sosNote"></p>
-
     <div id="nearestHelp" class="nearestHelp hidden"></div>
-
     <h3 class="sectionSub">🇮🇳 <span data-i18n="emergencyPhrasesTitle">Emergency Phrases</span></h3>
     <p class="tinyNote" data-i18n="emergencyPhrasesDesc"></p>
     <div id="emergencyPhrasesGrid" class="emergencyPhrasesGrid"></div>
-
     <h3 class="sectionSub">📞 <span>Helplines</span></h3>
     <ul id="helplinesList" class="helplinesList"></ul>
   </section>
 
-  <!-- ================= TAB: FARE ================= -->
+  <!-- ============ TAB: FARE ============ -->
   <section id="fare" class="tab">
     <h2 data-i18n="fareTitle">Auto-Rickshaw Fare Checker</h2>
     <p class="note" data-i18n="fareDesc"></p>
-
     <label data-i18n="fareFrom">From</label>
     <input id="fareFrom" placeholder="e.g. Madurai Railway Station">
-
     <label data-i18n="fareTo">To</label>
     <input id="fareTo" placeholder="e.g. Meenakshi Amman Temple">
-
     <button id="fareCheckBtn" data-i18n="fareCheckBtn">Check Fair Fare</button>
-
     <div id="fareResult" class="fareResult hidden"></div>
-
     <div id="fareDriverQr" class="fareDriverQr"></div>
   </section>
 
-  <!-- ================= TAB: PHRASEBOOK ================= -->
+  <!-- ============ TAB: PHRASEBOOK ============ -->
   <section id="phrase" class="tab">
     <h2 data-i18n="phrasebookTitle">Traveler Phrasebook</h2>
     <p class="note" data-i18n="phrasebookDesc"></p>
-
     <div class="chipsRow" id="phraseCatsRow">
       <button class="chip active" data-phrasecat="all" data-i18n="catAll">All</button>
       <button class="chip" data-phrasecat="greeting" data-i18n="catGreeting">Greetings</button>
@@ -270,18 +237,68 @@
       <button class="chip" data-phrasecat="emergency" data-i18n="catEmergency">Emergency</button>
       <button class="chip" data-phrasecat="polite" data-i18n="catPolite">Polite</button>
     </div>
-
     <div id="phraseList" class="phraseList"></div>
   </section>
 
-  <!-- ================= TAB: AI ================= -->
+  <!-- ============ TAB: PLAN ============ -->
+  <section id="plan" class="tab">
+    <h2 data-i18n="planTitle">Plan Your Time</h2>
+    <p class="note" data-i18n="planDesc">Tell us how many hours you have — we'll build a route from nearby places.</p>
+
+    <h3 class="sectionSub">🎒 <span data-i18n="itineraryTitle">Itinerary Generator</span></h3>
+    <label data-i18n="itineraryHours">How many hours do you have?</label>
+    <input id="planHours" type="number" min="1" max="12" value="4" inputmode="numeric">
+    <label data-i18n="itineraryStart">Starting from</label>
+    <input id="planStart" placeholder="e.g. Madurai Railway Station (or leave blank for GPS)">
+    <button id="planBuildBtn" data-i18n="itineraryBuild">🎯 Build my itinerary</button>
+    <div id="planResult" class="planResult hidden"></div>
+
+    <hr class="planDivider">
+
+    <h3 class="sectionSub">🌦️ <span data-i18n="weatherMemory">Weather Memory</span></h3>
+    <p class="tinyNote" data-i18n="weatherDesc">Log the weather when you visit a place.</p>
+    <label data-i18n="weatherPlaceLabel">Place you're at</label>
+    <input id="weatherPlace" placeholder="e.g. Kodaikanal Lake">
+    <label data-i18n="weatherChooseLabel">Current weather</label>
+    <div id="weatherButtons" class="weatherButtons"></div>
+    <button id="weatherSubmitBtn" data-i18n="weatherSubmit">Save weather</button>
+  </section>
+
+  <!-- ============ TAB: FIND ============ -->
+  <section id="find" class="tab">
+    <h2 data-i18n="findTitle">Where Am I?</h2>
+    <p class="note" data-i18n="findDesc">Offline locator. Nearest town, district and landmark — works with no signal.</p>
+    <button id="findBtn" data-i18n="findBtn">📍 Locate me offline</button>
+    <div id="findResult" class="findResult hidden"></div>
+
+    <hr class="planDivider">
+
+    <h3 class="sectionSub">💵 <span data-i18n="budgetTitle">Budget Tracker</span></h3>
+    <p class="tinyNote" data-i18n="budgetDesc">Log your expenses. See your daily average.</p>
+    <label data-i18n="budgetAmount">Amount (₹)</label>
+    <input id="budgetAmount" type="number" min="1" inputmode="numeric" placeholder="500">
+    <label data-i18n="budgetCategory">Category</label>
+    <select id="budgetCategory">
+      <option value="cat" data-i18n="budgetCat">Food</option>
+      <option value="transport" data-i18n="budgetTransport">Transport</option>
+      <option value="stay" data-i18n="budgetStay">Stay</option>
+      <option value="tickets" data-i18n="budgetTickets">Tickets</option>
+      <option value="other" data-i18n="budgetOther">Other</option>
+    </select>
+    <label data-i18n="budgetNote">Note (optional)</label>
+    <input id="budgetNote" placeholder="e.g. Lunch at Saravana Bhavan">
+    <button id="budgetAddBtn" data-i18n="budgetAdd">Add expense</button>
+    <div id="budgetSummary" class="budgetSummary"></div>
+  </section>
+
+  <!-- ============ TAB: AI ============ -->
   <section id="ai" class="tab">
     <h2 data-i18n="aiTitle">DK AI Assistant</h2>
     <p class="note" data-i18n="aiDesc"></p>
     <div id="dkAiContainer" class="dkAiContainer"></div>
   </section>
 
-  <!-- ================= TAB: SETTINGS ================= -->
+  <!-- ============ TAB: SETTINGS ============ -->
   <section id="settings" class="tab">
     <h2 data-i18n="settingsTitle">Settings</h2>
 
@@ -352,7 +369,7 @@
     <button id="installBtn" class="hidden" data-i18n="installBtn">📲 Install App</button>
   </section>
 
-  <!-- ================= FLOATING VOICE ASSISTANT ================= -->
+  <!-- ============ FLOATING VOICE ASSISTANT ============ -->
   <button id="micFab" aria-label="Voice assistant">🎙️</button>
   <div id="assistantPanel" class="assistantPanel hidden">
     <p data-i18n="assistantHint"></p>
@@ -360,11 +377,8 @@
     <p id="assistantReply"></p>
   </div>
 
-  <!-- ================= SCRIPTS ================= -->
-  <!-- Local libraries -->
+  <!-- ============ SCRIPTS ============ -->
   <script src="qrcode.min.js"></script>
-
-  <!-- Data files (order matters) -->
   <script src="places-data.js"></script>
   <script src="places-data-addition.js"></script>
   <script src="i18n.js"></script>
@@ -374,28 +388,17 @@
   <script src="festivals-data.js"></script>
   <script src="scams-data.js"></script>
   <script src="emergency-data.js"></script>
-
-  <!-- Optional: offline router (if you kept it) -->
   <script src="routes-data.js"></script>
   <script src="offline-router.js"></script>
-
-  <!-- Maps -->
   <script src="map-online.js"></script>
   <script src="map-offline.js"></script>
-
-  <!-- AI assistant -->
   <script src="dk-assistant.js"></script>
-
-  <!-- External: QR scanner (needs one online load) -->
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-
-  <!-- Firebase SDKs — must load BEFORE firebase-config.js -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js"></script>
-
-  <!-- Main app logic (loads last) -->
   <script src="app.js"></script>
+  <script src="features-extra.js"></script>
 
   <div id="toastContainer" aria-live="polite"></div>
 </body>
