@@ -1,49 +1,74 @@
 rules_version = '2';
 
-// Namma Tour — Firestore security rules.
+// Namma Tour — Firestore security rules (v2, with admin)
 //
-// HOW TO USE: Firebase Console → Build → Firestore Database → Rules tab →
-// replace everything there with this file's contents → Publish.
+// HOW TO USE:
+//   1. Firebase Console → Build → Firestore Database → Rules tab
+//   2. Replace everything with this file's contents
+//   3. Publish
 //
-// This app has no login system by design (works with zero setup), so these
-// rules can't check "is this really you" the way a normal app would — they
-// can only check that the DATA being written looks like a real tip/backup
-// and isn't someone dumping garbage or trying to overwrite other people's
-// data in ways the app itself would never do.
+// What changed vs v1:
+//   • Added an `admins` collection — user IDs listed there get delete
+//     rights on the `tips` collection (and update for edits).
+//   • Non-admin users can still only CREATE tips (never edit/delete).
+//   • Backups rules unchanged (public get by code, no list).
+//
+// HOW TO MAKE YOURSELF ADMIN:
+//   1. Enable Firebase Auth (Email/Password) in the console
+//   2. Create your admin account (email + password) in Authentication
+//   3. In Firestore → Data → start collection `admins`
+//      • Doc ID = your Firebase Auth UID (found in Authentication tab)
+//      • Field: `email` (string, your email) — anything else optional
+//   4. Sign in on the Admin tab in the app
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ---------- admins ----------
+    // Only readable by an authenticated user whose UID matches the doc ID.
+    // This stops any user from listing who the admins are.
+    match /admins/{adminId} {
+      allow get: if request.auth != null && request.auth.uid == adminId;
+      allow list: if false;
+      // Only editable from the Firebase console (server-side). Never from
+      // the app — a compromise of the app could otherwise self-promote.
+      allow write: if false;
+    }
+
     // ---------- tips ----------
-    // Public community feed: anyone can read (so tips spread), anyone can
-    // add a NEW tip (no login = no way to restrict who posts), but nobody
-    // can modify or delete a tip once it exists — the app itself only ever
-    // calls .add(), never .update()/.delete() on this collection, so
-    // blocking those outright closes off tampering with other people's tips.
+    // Community feed. Anyone can read; anyone can CREATE.
+    // Only admins can UPDATE (edit) or DELETE.
     match /tips/{tipId} {
-      allow read: true;
+      allow read: if true;
+
       allow create: if request.resource.data.keys().hasAll(['place', 'text', 'type', 'date'])
-                    && request.resource.data.place is string && request.resource.data.place.size() < 200
-                    && request.resource.data.text is string && request.resource.data.text.size() < 2000
+                    && request.resource.data.place is string
+                    && request.resource.data.place.size() < 200
+                    && request.resource.data.text is string
+                    && request.resource.data.text.size() < 2000
                     && request.resource.data.type in ['recommend', 'warning', 'urgent'];
-      allow update, delete: if false;
+
+      // Admin-only edit / delete
+      allow update, delete: if isAdmin();
+
+      // Helper — is the requester an admin?
+      function isAdmin() {
+        return request.auth != null
+            && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+      }
     }
 
     // ---------- backups ----------
-    // Each doc ID IS the user's backup code (e.g. "NT-XXXX-XXXX") — this is
-    // the app's only stand-in for an account. Knowing the code is the only
-    // "credential" that exists, so anyone with it can read/overwrite that
-    // one document — same trust model as the app already uses. What these
-    // rules DO add: nobody can list/enumerate every backup in the
-    // collection (only a direct doc-ID lookup works), and a write must at
-    // least look like real backup data, not arbitrary payloads.
+    // Each doc ID is the user's own backup code (NT-XXXX-XXXX). Knowing
+    // the code is the only "credential" — same trust model as the app.
+    // List is blocked so nobody can enumerate all backups.
     match /backups/{backupId} {
-      allow get: true;
+      allow get: if true;
       allow list: if false;
       allow write: if request.resource.data.keys().hasAny(['tips', 'trackHistory', 'savedPlaceIds', 'updatedAt']);
     }
 
-    // Everything else stays closed.
+    // Everything else closed.
     match /{document=**} {
       allow read, write: if false;
     }
