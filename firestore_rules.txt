@@ -1,4 +1,4 @@
-rules_version = '2';
+rules_version = '3';
 
 // Namma Tour — Firestore security rules (v2, with admin)
 //
